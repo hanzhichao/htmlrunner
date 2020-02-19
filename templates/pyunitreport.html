@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{title}}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12">
+                <h2 class="text-capitalize">{{title}}</h2>
+                <p class='attribute'><strong>Start Time: </strong>{{start_at}}</p>
+                <p class='attribute'><strong>Duration: </strong>{{duration}}s</p>
+                <p class='attribute'><strong>Status: </strong>Pass: {{pass_num}}, Fail: {{fail_num}}, Error: {{error_num}}, Skip: {{skipped_num}}</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-sm-10 col-md-10"></div>
+                <table class='table table-hover table-responsive'>
+                    <thead>
+                        <tr>
+                            <th>.</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ for case in test_cases }}
+                            <tr class="
+                            {% if case.status in ['PASS', 'XFAIL'] %}success
+                            {% elif case.status in ['FAIL', 'XPASS'] %}danger
+                            {% elif case.status=='ERROR' %}warning
+                            {% else %}
+                            {% endif %}">
+                                <td class="col-xs-9">{{case.name}}</td>
+                                <td class="col-xs-3">
+                                    <span class="label label-success">
+                                            {{case.status}}
+                                    </span>
+                                    {% if case.status!='PASS' %}
+                                    &nbsp<button class="btn btn-default btn-xs">View</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if case.status!='PASS' %}
+                            <tr style="display:none;">
+                                <td class="col-xs-9">
+                                    <p>{{case.exec_info}}</p>
+                                    <p></p>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        <tr>
+                            <td>
+                               Total Test Runned: {{total}}
+                            </td>
+                            <td>
+                                <span>Pass: {{pass_num}}, Fail: {{fail_num}}, Error: {{error_num}}, Skip: {{skipped_num}}</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.2.4.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $('td').on('click', '.btn', function(e){
+                e.preventDefault();
+                var $this = $(this);
+                var $nextRow = $this.closest('tr').next('tr');
+                $nextRow.slideToggle("fast");
+                $this.text(function(i, text){
+                    if (text === 'View') {
+                        return 'Hide';
+                    } else {
+                        return 'View';
+                    };
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h1 class="pt-4">{{title}}</h1>
+    {% if description %}<h6>{{description}}</h6>{% endif %}
+    {% if tester %}<h6>执行人: {{tester}}</h6>{% endif %}
+    <h6>概要: 执行总数: {{run_num}} 通过: {{pass_num}} 失败: {{fail_num}} 出错: {{error_num}} 跳过: {{skipped_num}}</h6>
+    <h6 class="pb-2">开始时间: {{start_at}} 结束时间: {{end_at}} 耗时: {{duration}}s</h6>
+    <table class="table table-striped">
+        <thead><tr><th>序号</th><th>用例</th><th>总数</th><th>通过</th><th>失败</th><th>出错</th></tr></thead>
+        <tbody>
+            {% for name, test_class in test_classes.items() %}
+                <tr><td colspan="2">{{name}}</td><td>{{test_class.total}}</td><td>{{test_class.pass_num}}</td><td>{{test_class.fail_num}}</td><td>{{test_class.error_num}}</td></tr>
+                {% for test in test_class['test_cases'] %}
+                    <tr class="mr-md-3 
+                    {% if test.status in ['PASS', 'XFAIL'] %}table-success
+                    {% elif test.status in ['FAIL', 'XPASS'] %}table-danger
+                    {% elif test.status=='ERROR' %}table-warning
+                    {% else %}table-secondary
+                    {% endif %}"><td>{{test.sn}}</td><td>{{test.name}}</td><td colspan="4">{{test.status}}<br/><pre class="text-sm-left">{{test.exec_info}}</pre></td></tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <style>body {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	min-width: 1200px;
+	color: #999;
+}
+
+h1 {
+	font-size: 24px;
+	color: black;
+}
+
+h2 {
+	font-size: 16px;
+	color: black;
+}
+
+p {
+    color: black;
+}
+
+a {
+	color: #999;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+
+#environment td {
+	padding: 5px;
+	border: 1px solid #E6E6E6;
+}
+
+#environment tr:nth-child(odd) {
+	background-color: #f6f6f6;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed, .passed .col-result {
+	color: green;
+}
+span.skipped, span.xfailed, span.rerun, .skipped .col-result, .xfailed .col-result, .rerun .col-result {
+	color: orange;
+}
+span.error, span.failed, span.xpassed, .error .col-result, .failed .col-result, .xpassed .col-result  {
+	color: red;
+}
+
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+
+#results-table {
+	border: 1px solid #e6e6e6;
+	color: #999;
+	font-size: 12px;
+	width: 100%
+}
+
+#results-table th, #results-table td {
+	padding: 5px;
+	border: 1px solid #E6E6E6;
+	text-align: left
+}
+#results-table th {
+	font-weight: bold
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+
+.log:only-child {
+	height: inherit
+}
+.log {
+	background-color: #e6e6e6;
+	border: 1px solid #e6e6e6;
+	color: black;
+	display: block;
+	font-family: "Courier New", Courier, monospace;
+	height: 230px;
+	overflow-y: scroll;
+	padding: 5px;
+	white-space: pre-wrap
+}
+div.image {
+	border: 1px solid #e6e6e6;
+	float: right;
+	height: 240px;
+	margin-left: 5px;
+	overflow: hidden;
+	width: 320px
+}
+div.image img {
+	width: 320px
+}
+.collapsed {
+	display: none;
+}
+.expander::after {
+	content: " (show details)";
+	color: #BBB;
+	font-style: italic;
+	cursor: pointer;
+}
+.collapser::after {
+	content: " (hide details)";
+	color: #BBB;
+	font-style: italic;
+	cursor: pointer;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+	cursor: pointer;
+}
+
+.sort-icon {
+	font-size: 0px;
+	float: left;
+	margin-right: 5px;
+	margin-top: 5px;
+	/*triangle*/
+	width: 0;
+	height: 0;
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+}
+
+.inactive .sort-icon {
+	/*finish triangle*/
+	border-top: 8px solid #E6E6E6;
+}
+
+.asc.active .sort-icon {
+	/*finish triangle*/
+	border-bottom: 8px solid #999;
+}
+
+.desc.active .sort-icon {
+	/*finish triangle*/
+	border-top: 8px solid #999;
+}
+</style></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function find_all(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sort_column(elem) {
+    toggle_sort_states(elem);
+    var colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    var key;
+    if (elem.classList.contains('numeric')) {
+        key = key_num;
+    } else if (elem.classList.contains('result')) {
+        key = key_result;
+    } else {
+        key = key_alpha;
+    }
+    sort_table(elem, key(colIndex));
+}
+
+function show_all_extras() {
+    find_all('.col-result').forEach(show_extras);
+}
+
+function hide_all_extras() {
+    find_all('.col-result').forEach(hide_extras);
+}
+
+function show_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.remove("collapsed");
+    expandcollapse.classList.remove("expander");
+    expandcollapse.classList.add("collapser");
+}
+
+function hide_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.add("collapsed");
+    expandcollapse.classList.remove("collapser");
+    expandcollapse.classList.add("expander");
+}
+
+function show_filters() {
+    var filter_items = document.getElementsByClassName('filter');
+    for (var i = 0; i < filter_items.length; i++)
+        filter_items[i].hidden = false;
+}
+
+function add_collapse() {
+    // Add links for show/hide all
+    var resulttable = find('table#results-table');
+    var showhideall = document.createElement("p");
+    showhideall.innerHTML = '<a href="javascript:show_all_extras()">Show all details</a> / ' +
+                            '<a href="javascript:hide_all_extras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    find_all('.col-result').forEach(function(elem) {
+        var collapsed = get_query_parameter('collapsed') || 'Passed';
+        var extras = elem.parentNode.nextElementSibling;
+        var expandcollapse = document.createElement("span");
+        if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add("collapsed");
+            expandcollapse.classList.add("expander");
+        } else {
+            expandcollapse.classList.add("collapser");
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener("click", function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains("collapsed")) {
+                show_extras(event.currentTarget);
+            } else {
+                hide_extras(event.currentTarget);
+            }
+        });
+    })
+}
+
+function get_query_parameter(name) {
+    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () {
+    reset_sort_headers();
+
+    add_collapse();
+
+    show_filters();
+
+    toggle_sort_states(find('.initial-sort'));
+
+    find_all('.sortable').forEach(function(elem) {
+        elem.addEventListener("click",
+                              function(event) {
+                                  sort_column(elem);
+                              }, false)
+    });
+
+};
+
+function sort_table(clicked, key_func) {
+    var rows = find_all('.results-table-row');
+    var reversed = !clicked.classList.contains('asc');
+    var sorted_rows = sort(rows, key_func, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    var thead = document.getElementById("results-table-head");
+    document.getElementById('results-table').remove();
+    var parent = document.createElement("table");
+    parent.id = "results-table";
+    parent.appendChild(thead);
+    sorted_rows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName("BODY")[0].appendChild(parent);
+}
+
+function sort(items, key_func, reversed) {
+    var sort_array = items.map(function(item, i) {
+        return [key_func(item), i];
+    });
+
+    sort_array.sort(function(a, b) {
+        var key_a = a[0];
+        var key_b = b[0];
+
+        if (key_a == key_b) return 0;
+
+        if (reversed) {
+            return (key_a < key_b ? 1 : -1);
+        } else {
+            return (key_a > key_b ? 1 : -1);
+        }
+    });
+
+    return sort_array.map(function(item) {
+        var index = item[1];
+        return items[index];
+    });
+}
+
+function key_alpha(col_index) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[col_index].firstChild.data.toLowerCase();
+    };
+}
+
+function key_num(col_index) {
+    return function(elem) {
+        return parseFloat(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function key_result(col_index) {
+    return function(elem) {
+        var strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+                       'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function reset_sort_headers() {
+    find_all('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    find_all('.sortable').forEach(function(elem) {
+        var icon = document.createElement("div");
+        icon.className = "sort-icon";
+        icon.textContent = "vvv";
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove("desc", "active");
+        elem.classList.add("asc", "inactive");
+    });
+}
+
+function toggle_sort_states(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        reset_sort_headers();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function is_all_rows_hidden(value) {
+  return value.hidden == false;
+}
+
+function filter_table(elem) {
+    var outcome_att = "data-test-result";
+    var outcome = elem.getAttribute(outcome_att);
+    class_outcome = outcome + " results-table-row";
+    var outcome_rows = document.getElementsByClassName(class_outcome);
+
+    for(var i = 0; i < outcome_rows.length; i++){
+        outcome_rows[i].hidden = !elem.checked;
+    }
+
+    var rows = find_all('.results-table-row').filter(is_all_rows_hidden);
+    var all_rows_hidden = rows.length == 0 ? true : false;
+    var not_found_message = document.getElementById("not-found-message");
+    not_found_message.hidden = !all_rows_hidden;
+}
+</script>
+    <h1>report_20191125_214142.html</h1>
+    <p>Report generated on 25-Nov-2019 at 21:41:43 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v2.0.0</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>Base URL</td>
+        <td><a href="http://115.28.108.130:8080" target="_blank">http://115.28.108.130:8080</a></td></tr>
+      <tr>
+        <td>Capabilities</td>
+        <td>{}</td></tr>
+      <tr>
+        <td>Driver</td>
+        <td>chrome</td></tr>
+      <tr>
+        <td>JAVA_HOME</td>
+        <td>/Library/Java/JavaVirtualMachines/jdk1.8.0_171.jdk/Contents/Home</td></tr>
+      <tr>
+        <td>Packages</td>
+        <td>{&apos;pytest&apos;: &apos;5.2.2&apos;, &apos;py&apos;: &apos;1.8.0&apos;, &apos;pluggy&apos;: &apos;0.13.0&apos;}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Darwin-19.0.0-x86_64-i386-64bit</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{&apos;xdist&apos;: &apos;1.30.0&apos;, &apos;variables&apos;: &apos;1.9.0&apos;, &apos;html&apos;: &apos;2.0.0&apos;, &apos;base-url&apos;: &apos;1.4.1&apos;, &apos;rerunfailures&apos;: &apos;7.0&apos;, &apos;check&apos;: &apos;0.3.5&apos;, &apos;selenium&apos;: &apos;1.17.0&apos;, &apos;forked&apos;: &apos;1.1.3&apos;, &apos;metadata&apos;: &apos;1.8.0&apos;}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.6.5</td></tr></table>
+    <h2>Summary</h2>
+    <p>0 tests ran in 1.20 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">0 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">2 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">2 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>, <input checked="true" class="filter" data-test-result="rerun" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="rerun">0 rerun</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable numeric" col="duration">Duration</th>
+          <th>Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="error results-table-row">
+        <tr>
+          <td class="col-result">Error</td>
+          <td class="col-name">test_cases/app_test/test_login.py::test_login::setup</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/><br/>    def _new_conn(self):<br/>        &quot;&quot;&quot; Establish a socket connection and set nodelay settings on it.<br/>    <br/>        :return: New socket connection.<br/>        &quot;&quot;&quot;<br/>        extra_kw = {}<br/>        if self.source_address:<br/>            extra_kw[&quot;source_address&quot;] = self.source_address<br/>    <br/>        if self.socket_options:<br/>            extra_kw[&quot;socket_options&quot;] = self.socket_options<br/>    <br/>        try:<br/>            conn = connection.create_connection(<br/>&gt;               (self._dns_host, self.port), self.timeout, **extra_kw<br/>            )<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connection.py:157: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>address = (&#x27;localhost&#x27;, 4723), timeout = &lt;object object at 0x105ab62a0&gt;, source_address = None, socket_options = [(6, 1, 1)]<br/><br/>    def create_connection(<br/>        address,<br/>        timeout=socket._GLOBAL_DEFAULT_TIMEOUT,<br/>        source_address=None,<br/>        socket_options=None,<br/>    ):<br/>        &quot;&quot;&quot;Connect to *address* and return the socket object.<br/>    <br/>        Convenience function.  Connect to *address* (a 2-tuple ``(host,<br/>        port)``) and return the socket object.  Passing the optional<br/>        *timeout* parameter will set the timeout on the socket instance<br/>        before attempting to connect.  If no *timeout* is supplied, the<br/>        global default timeout setting returned by :func:`getdefaulttimeout`<br/>        is used.  If *source_address* is set it must be a tuple of (host, port)<br/>        for the socket to bind as a source address before making the connection.<br/>        An host of &#x27;&#x27; or port 0 tells the OS to use the default.<br/>        &quot;&quot;&quot;<br/>    <br/>        host, port = address<br/>        if host.startswith(&quot;[&quot;):<br/>            host = host.strip(&quot;[]&quot;)<br/>        err = None<br/>    <br/>        # Using the value from allowed_gai_family() in the context of getaddrinfo lets<br/>        # us select whether to work with IPv4 DNS records, IPv6 records, or both.<br/>        # The original create_connection function always returns all records.<br/>        family = allowed_gai_family()<br/>    <br/>        for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):<br/>            af, socktype, proto, canonname, sa = res<br/>            sock = None<br/>            try:<br/>                sock = socket.socket(af, socktype, proto)<br/>    <br/>                # If provided, set socket level options before connecting.<br/>                _set_socket_options(sock, socket_options)<br/>    <br/>                if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:<br/>                    sock.settimeout(timeout)<br/>                if source_address:<br/>                    sock.bind(source_address)<br/>                sock.connect(sa)<br/>                return sock<br/>    <br/>            except socket.error as e:<br/>                err = e<br/>                if sock is not None:<br/>                    sock.close()<br/>                    sock = None<br/>    <br/>        if err is not None:<br/>&gt;           raise err<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/util/connection.py:84: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>address = (&#x27;localhost&#x27;, 4723), timeout = &lt;object object at 0x105ab62a0&gt;, source_address = None, socket_options = [(6, 1, 1)]<br/><br/>    def create_connection(<br/>        address,<br/>        timeout=socket._GLOBAL_DEFAULT_TIMEOUT,<br/>        source_address=None,<br/>        socket_options=None,<br/>    ):<br/>        &quot;&quot;&quot;Connect to *address* and return the socket object.<br/>    <br/>        Convenience function.  Connect to *address* (a 2-tuple ``(host,<br/>        port)``) and return the socket object.  Passing the optional<br/>        *timeout* parameter will set the timeout on the socket instance<br/>        before attempting to connect.  If no *timeout* is supplied, the<br/>        global default timeout setting returned by :func:`getdefaulttimeout`<br/>        is used.  If *source_address* is set it must be a tuple of (host, port)<br/>        for the socket to bind as a source address before making the connection.<br/>        An host of &#x27;&#x27; or port 0 tells the OS to use the default.<br/>        &quot;&quot;&quot;<br/>    <br/>        host, port = address<br/>        if host.startswith(&quot;[&quot;):<br/>            host = host.strip(&quot;[]&quot;)<br/>        err = None<br/>    <br/>        # Using the value from allowed_gai_family() in the context of getaddrinfo lets<br/>        # us select whether to work with IPv4 DNS records, IPv6 records, or both.<br/>        # The original create_connection function always returns all records.<br/>        family = allowed_gai_family()<br/>    <br/>        for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):<br/>            af, socktype, proto, canonname, sa = res<br/>            sock = None<br/>            try:<br/>                sock = socket.socket(af, socktype, proto)<br/>    <br/>                # If provided, set socket level options before connecting.<br/>                _set_socket_options(sock, socket_options)<br/>    <br/>                if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:<br/>                    sock.settimeout(timeout)<br/>                if source_address:<br/>                    sock.bind(source_address)<br/>&gt;               sock.connect(sa)<br/><span class="error">E               ConnectionRefusedError: [Errno 61] Connection refused</span><br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/util/connection.py:74: ConnectionRefusedError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>self = &lt;urllib3.connectionpool.HTTPConnectionPool object at 0x107763b70&gt;, method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;<br/>body = &#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;: ...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/>headers = {&#x27;Accept&#x27;: &#x27;application/json&#x27;, &#x27;Connection&#x27;: &#x27;keep-alive&#x27;, &#x27;Content-Type&#x27;: &#x27;application/json;charset=UTF-8&#x27;, &#x27;User-Agent&#x27;: &#x27;appium/python 0.48 (selenium/3.141.0 (python mac))&#x27;}, retries = Retry(total=0, connect=None, read=None, redirect=None, status=None)<br/>redirect = False, assert_same_host = False, timeout = &lt;object object at 0x105ab6810&gt;, pool_timeout = None, release_conn = True, chunked = False, body_pos = None, response_kw = {&#x27;request_url&#x27;: &#x27;http://localhost:4723/wd/hub/session&#x27;}, conn = None<br/>release_this_conn = True, err = None, clean_exit = False, timeout_obj = &lt;urllib3.util.timeout.Timeout object at 0x1077dc6d8&gt;, is_new_proxy_conn = False<br/><br/>    def urlopen(<br/>        self,<br/>        method,<br/>        url,<br/>        body=None,<br/>        headers=None,<br/>        retries=None,<br/>        redirect=True,<br/>        assert_same_host=True,<br/>        timeout=_Default,<br/>        pool_timeout=None,<br/>        release_conn=None,<br/>        chunked=False,<br/>        body_pos=None,<br/>        **response_kw<br/>    ):<br/>        &quot;&quot;&quot;<br/>        Get a connection from the pool and perform an HTTP request. This is the<br/>        lowest level call for making a request, so you&#x27;ll need to specify all<br/>        the raw details.<br/>    <br/>        .. note::<br/>    <br/>           More commonly, it&#x27;s appropriate to use a convenience method provided<br/>           by :class:`.RequestMethods`, such as :meth:`request`.<br/>    <br/>        .. note::<br/>    <br/>           `release_conn` will only behave as expected if<br/>           `preload_content=False` because we want to make<br/>           `preload_content=False` the default behaviour someday soon without<br/>           breaking backwards compatibility.<br/>    <br/>        :param method:<br/>            HTTP request method (such as GET, POST, PUT, etc.)<br/>    <br/>        :param body:<br/>            Data to send in the request body (useful for creating<br/>            POST requests, see HTTPConnectionPool.post_url for<br/>            more convenience).<br/>    <br/>        :param headers:<br/>            Dictionary of custom headers to send, such as User-Agent,<br/>            If-None-Match, etc. If None, pool headers are used. If provided,<br/>            these headers completely replace any pool-specific headers.<br/>    <br/>        :param retries:<br/>            Configure the number of retries to allow before raising a<br/>            :class:`~urllib3.exceptions.MaxRetryError` exception.<br/>    <br/>            Pass ``None`` to retry until you receive a response. Pass a<br/>            :class:`~urllib3.util.retry.Retry` object for fine-grained control<br/>            over different types of retries.<br/>            Pass an integer number to retry connection errors that many times,<br/>            but no other types of errors. Pass zero to never retry.<br/>    <br/>            If ``False``, then retries are disabled and any exception is raised<br/>            immediately. Also, instead of raising a MaxRetryError on redirects,<br/>            the redirect response will be returned.<br/>    <br/>        :type retries: :class:`~urllib3.util.retry.Retry`, False, or an int.<br/>    <br/>        :param redirect:<br/>            If True, automatically handle redirects (status codes 301, 302,<br/>            303, 307, 308). Each redirect counts as a retry. Disabling retries<br/>            will disable redirect, too.<br/>    <br/>        :param assert_same_host:<br/>            If ``True``, will make sure that the host of the pool requests is<br/>            consistent else will raise HostChangedError. When False, you can<br/>            use the pool on an HTTP proxy and request foreign hosts.<br/>    <br/>        :param timeout:<br/>            If specified, overrides the default timeout for this one<br/>            request. It may be a float (in seconds) or an instance of<br/>            :class:`urllib3.util.Timeout`.<br/>    <br/>        :param pool_timeout:<br/>            If set and the pool is set to block=True, then this method will<br/>            block for ``pool_timeout`` seconds and raise EmptyPoolError if no<br/>            connection is available within the time period.<br/>    <br/>        :param release_conn:<br/>            If False, then the urlopen call will not release the connection<br/>            back into the pool once a response is received (but will release if<br/>            you read the entire contents of the response such as when<br/>            `preload_content=True`). This is useful if you&#x27;re not preloading<br/>            the response&#x27;s content immediately. You will need to call<br/>            ``r.release_conn()`` on the response ``r`` to return the connection<br/>            back into the pool. If None, it takes the value of<br/>            ``response_kw.get(&#x27;preload_content&#x27;, True)``.<br/>    <br/>        :param chunked:<br/>            If True, urllib3 will send the body using chunked transfer<br/>            encoding. Otherwise, urllib3 will send the body using the standard<br/>            content-length form. Defaults to False.<br/>    <br/>        :param int body_pos:<br/>            Position to seek to in file-like body in the event of a retry or<br/>            redirect. Typically this won&#x27;t need to be set because urllib3 will<br/>            auto-populate the value when needed.<br/>    <br/>        :param \\**response_kw:<br/>            Additional parameters are passed to<br/>            :meth:`urllib3.response.HTTPResponse.from_httplib`<br/>        &quot;&quot;&quot;<br/>        if headers is None:<br/>            headers = self.headers<br/>    <br/>        if not isinstance(retries, Retry):<br/>            retries = Retry.from_int(retries, redirect=redirect, default=self.retries)<br/>    <br/>        if release_conn is None:<br/>            release_conn = response_kw.get(&quot;preload_content&quot;, True)<br/>    <br/>        # Check host<br/>        if assert_same_host and not self.is_same_host(url):<br/>            raise HostChangedError(self, url, retries)<br/>    <br/>        # Ensure that the URL we&#x27;re connecting to is properly encoded<br/>        if url.startswith(&quot;/&quot;):<br/>            url = six.ensure_str(_encode_target(url))<br/>        else:<br/>            url = six.ensure_str(parse_url(url).url)<br/>    <br/>        conn = None<br/>    <br/>        # Track whether `conn` needs to be released before<br/>        # returning/raising/recursing. Update this variable if necessary, and<br/>        # leave `release_conn` constant throughout the function. That way, if<br/>        # the function recurses, the original value of `release_conn` will be<br/>        # passed down into the recursive call, and its value will be respected.<br/>        #<br/>        # See issue #651 [1] for details.<br/>        #<br/>        # [1] &lt;https://github.com/shazow/urllib3/issues/651&gt;<br/>        release_this_conn = release_conn<br/>    <br/>        # Merge the proxy headers. Only do this in HTTP. We have to copy the<br/>        # headers dict so we can safely change it without those changes being<br/>        # reflected in anyone else&#x27;s copy.<br/>        if self.scheme == &quot;http&quot;:<br/>            headers = headers.copy()<br/>            headers.update(self.proxy_headers)<br/>    <br/>        # Must keep the exception bound to a separate variable or else Python 3<br/>        # complains about UnboundLocalError.<br/>        err = None<br/>    <br/>        # Keep track of whether we cleanly exited the except block. This<br/>        # ensures we do proper cleanup in finally.<br/>        clean_exit = False<br/>    <br/>        # Rewind body position, if needed. Record current position<br/>        # for future rewinds in the event of a redirect/retry.<br/>        body_pos = set_file_position(body, body_pos)<br/>    <br/>        try:<br/>            # Request a connection from the queue.<br/>            timeout_obj = self._get_timeout(timeout)<br/>            conn = self._get_conn(timeout=pool_timeout)<br/>    <br/>            conn.timeout = timeout_obj.connect_timeout<br/>    <br/>            is_new_proxy_conn = self.proxy is not None and not getattr(<br/>                conn, &quot;sock&quot;, None<br/>            )<br/>            if is_new_proxy_conn:<br/>                self._prepare_proxy(conn)<br/>    <br/>            # Make the request on the httplib connection object.<br/>            httplib_response = self._make_request(<br/>                conn,<br/>                method,<br/>                url,<br/>                timeout=timeout_obj,<br/>                body=body,<br/>                headers=headers,<br/>&gt;               chunked=chunked,<br/>            )<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:672: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connectionpool.HTTPConnectionPool object at 0x107763b70&gt;, conn = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;, method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;, timeout = &lt;urllib3.util.timeout.Timeout object at 0x1077dc6d8&gt;, chunked = False<br/>httplib_request_kw = {&#x27;body&#x27;: &#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:devi... &#x27;Content-Type&#x27;: &#x27;application/json;charset=UTF-8&#x27;, &#x27;User-Agent&#x27;: &#x27;appium/python 0.48 (selenium/3.141.0 (python mac))&#x27;}}<br/>timeout_obj = &lt;urllib3.util.timeout.Timeout object at 0x1077dc6a0&gt;<br/><br/>    def _make_request(<br/>        self, conn, method, url, timeout=_Default, chunked=False, **httplib_request_kw<br/>    ):<br/>        &quot;&quot;&quot;<br/>        Perform a request on a given urllib connection object taken from our<br/>        pool.<br/>    <br/>        :param conn:<br/>            a connection from one of our connection pools<br/>    <br/>        :param timeout:<br/>            Socket timeout in seconds for the request. This can be a<br/>            float or integer, which will set the same timeout value for<br/>            the socket connect and the socket read, or an instance of<br/>            :class:`urllib3.util.Timeout`, which gives you more fine-grained<br/>            control over your timeouts.<br/>        &quot;&quot;&quot;<br/>        self.num_requests += 1<br/>    <br/>        timeout_obj = self._get_timeout(timeout)<br/>        timeout_obj.start_connect()<br/>        conn.timeout = timeout_obj.connect_timeout<br/>    <br/>        # Trigger any extra validation we need to do.<br/>        try:<br/>            self._validate_conn(conn)<br/>        except (SocketTimeout, BaseSSLError) as e:<br/>            # Py2 raises this as a BaseSSLError, Py3 raises it as socket timeout.<br/>            self._raise_timeout(err=e, url=url, timeout_value=conn.timeout)<br/>            raise<br/>    <br/>        # conn.request() calls httplib.*.request, not the method in<br/>        # urllib3.request. It also calls makefile (recv) on the socket.<br/>        if chunked:<br/>            conn.request_chunked(method, url, **httplib_request_kw)<br/>        else:<br/>&gt;           conn.request(method, url, **httplib_request_kw)<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:387: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;, method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;<br/>body = &#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;: ...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/>headers = {&#x27;Accept&#x27;: &#x27;application/json&#x27;, &#x27;Connection&#x27;: &#x27;keep-alive&#x27;, &#x27;Content-Type&#x27;: &#x27;application/json;charset=UTF-8&#x27;, &#x27;User-Agent&#x27;: &#x27;appium/python 0.48 (selenium/3.141.0 (python mac))&#x27;}<br/><br/>    def request(self, method, url, body=None, headers={}, *,<br/>                encode_chunked=False):<br/>        &quot;&quot;&quot;Send a complete request to the server.&quot;&quot;&quot;<br/>&gt;       self._send_request(method, url, body, headers, encode_chunked)<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:1239: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;, method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;<br/>body = b&#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;:...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/>headers = {&#x27;Accept&#x27;: &#x27;application/json&#x27;, &#x27;Connection&#x27;: &#x27;keep-alive&#x27;, &#x27;Content-Type&#x27;: &#x27;application/json;charset=UTF-8&#x27;, &#x27;User-Agent&#x27;: &#x27;appium/python 0.48 (selenium/3.141.0 (python mac))&#x27;}, encode_chunked = False<br/><br/>    def _send_request(self, method, url, body, headers, encode_chunked):<br/>        # Honor explicitly requested Host: and Accept-Encoding: headers.<br/>        header_names = frozenset(k.lower() for k in headers)<br/>        skips = {}<br/>        if &#x27;host&#x27; in header_names:<br/>            skips[&#x27;skip_host&#x27;] = 1<br/>        if &#x27;accept-encoding&#x27; in header_names:<br/>            skips[&#x27;skip_accept_encoding&#x27;] = 1<br/>    <br/>        self.putrequest(method, url, **skips)<br/>    <br/>        # chunked encoding will happen if HTTP/1.1 is used and either<br/>        # the caller passes encode_chunked=True or the following<br/>        # conditions hold:<br/>        # 1. content-length has not been explicitly set<br/>        # 2. the body is a file or iterable, but not a str or bytes-like<br/>        # 3. Transfer-Encoding has NOT been explicitly set by the caller<br/>    <br/>        if &#x27;content-length&#x27; not in header_names:<br/>            # only chunk body if not explicitly set for backwards<br/>            # compatibility, assuming the client code is already handling the<br/>            # chunking<br/>            if &#x27;transfer-encoding&#x27; not in header_names:<br/>                # if content-length cannot be automatically determined, fall<br/>                # back to chunked encoding<br/>                encode_chunked = False<br/>                content_length = self._get_content_length(body, method)<br/>                if content_length is None:<br/>                    if body is not None:<br/>                        if self.debuglevel &gt; 0:<br/>                            print(&#x27;Unable to determine size of %r&#x27; % body)<br/>                        encode_chunked = True<br/>                        self.putheader(&#x27;Transfer-Encoding&#x27;, &#x27;chunked&#x27;)<br/>                else:<br/>                    self.putheader(&#x27;Content-Length&#x27;, str(content_length))<br/>        else:<br/>            encode_chunked = False<br/>    <br/>        for hdr, value in headers.items():<br/>            self.putheader(hdr, value)<br/>        if isinstance(body, str):<br/>            # RFC 2616 Section 3.7.1 says that text default has a<br/>            # default charset of iso-8859-1.<br/>            body = _encode(body, &#x27;body&#x27;)<br/>&gt;       self.endheaders(body, encode_chunked=encode_chunked)<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:1285: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/>message_body = b&#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;:...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/><br/>    def endheaders(self, message_body=None, *, encode_chunked=False):<br/>        &quot;&quot;&quot;Indicate that the last header line has been sent to the server.<br/>    <br/>        This method sends the request to the server.  The optional message_body<br/>        argument can be used to pass a message body associated with the<br/>        request.<br/>        &quot;&quot;&quot;<br/>        if self.__state == _CS_REQ_STARTED:<br/>            self.__state = _CS_REQ_SENT<br/>        else:<br/>            raise CannotSendHeader()<br/>&gt;       self._send_output(message_body, encode_chunked=encode_chunked)<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:1234: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/>message_body = b&#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;:...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/>encode_chunked = False<br/><br/>    def _send_output(self, message_body=None, encode_chunked=False):<br/>        &quot;&quot;&quot;Send the currently buffered request and clear the buffer.<br/>    <br/>        Appends an extra \\r\\n to the buffer.<br/>        A message_body may be specified, to be appended to the request.<br/>        &quot;&quot;&quot;<br/>        self._buffer.extend((b&quot;&quot;, b&quot;&quot;))<br/>        msg = b&quot;\r\n&quot;.join(self._buffer)<br/>        del self._buffer[:]<br/>&gt;       self.send(msg)<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:1026: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/>data = b&#x27;POST /wd/hub/session HTTP/1.1\r\nHost: localhost:4723\r\nAccept-Encoding: identity\r\nContent-Length: 608\r\nAccept:...json;charset=UTF-8\r\nUser-Agent: appium/python 0.48 (selenium/3.141.0 (python mac))\r\nConnection: keep-alive\r\n\r\n&#x27;<br/><br/>    def send(self, data):<br/>        &quot;&quot;&quot;Send `data&#x27; to the server.<br/>        ``data`` can be a string object, a bytes object, an array object, a<br/>        file-like object that supports a .read() method, or an iterable object.<br/>        &quot;&quot;&quot;<br/>    <br/>        if self.sock is None:<br/>            if self.auto_open:<br/>&gt;               self.connect()<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:964: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/><br/>    def connect(self):<br/>&gt;       conn = self._new_conn()<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connection.py:184: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/><br/>    def _new_conn(self):<br/>        &quot;&quot;&quot; Establish a socket connection and set nodelay settings on it.<br/>    <br/>        :return: New socket connection.<br/>        &quot;&quot;&quot;<br/>        extra_kw = {}<br/>        if self.source_address:<br/>            extra_kw[&quot;source_address&quot;] = self.source_address<br/>    <br/>        if self.socket_options:<br/>            extra_kw[&quot;socket_options&quot;] = self.socket_options<br/>    <br/>        try:<br/>            conn = connection.create_connection(<br/>                (self._dns_host, self.port), self.timeout, **extra_kw<br/>            )<br/>    <br/>        except SocketTimeout:<br/>            raise ConnectTimeoutError(<br/>                self,<br/>                &quot;Connection to %s timed out. (connect timeout=%s)&quot;<br/>                % (self.host, self.timeout),<br/>            )<br/>    <br/>        except SocketError as e:<br/>            raise NewConnectionError(<br/>&gt;               self, &quot;Failed to establish a new connection: %s&quot; % e<br/>            )<br/><span class="error">E           urllib3.exceptions.NewConnectionError: &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;: Failed to establish a new connection: [Errno 61] Connection refused</span><br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connection.py:169: NewConnectionError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>variables = {&#x27;caps&#x27;: {&#x27;appActivity&#x27;: &#x27;com.lqr.wechat.ui.activity.SplashActivity&#x27;, &#x27;appPackage&#x27;: &#x27;com.lqr.wechat&#x27;, &#x27;autoLaunch&#x27;: False, &#x27;deviceName&#x27;: &#x27;127.0.0.1:62001&#x27;, ...}, &#x27;server&#x27;: &#x27;http://localhost:4723/wd/hub&#x27;}<br/><br/>    @pytest.fixture(scope=&#x27;session&#x27;)<br/>    def driver(variables):<br/>        print(variables)<br/>        caps = variables[&#x27;caps&#x27;]<br/>        server = variables[&#x27;server&#x27;]<br/>&gt;       driver = webdriver.Remote(server, caps)<br/><br/>test_cases/app_test/conftest.py:13: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/>../../../venvs/longteng17/lib/python3.6/site-packages/appium/webdriver/webdriver.py:144: in __init__<br/>    proxy<br/>../../../venvs/longteng17/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py:157: in __init__<br/>    self.start_session(capabilities, browser_profile)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/appium/webdriver/webdriver.py:219: in start_session<br/>    response = self.execute(RemoteCommand.NEW_SESSION, parameters)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py:319: in execute<br/>    response = self.command_executor.execute(driver_command, params)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/selenium/webdriver/remote/remote_connection.py:374: in execute<br/>    return self._request(command_info[0], url, body=data)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/selenium/webdriver/remote/remote_connection.py:397: in _request<br/>    resp = self._conn.request(method, url, body=body, headers=headers)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/request.py:80: in request<br/>    method, url, fields=fields, headers=headers, **urlopen_kw<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/request.py:171: in request_encode_body<br/>    return self.urlopen(method, url, **extra_kw)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/poolmanager.py:330: in urlopen<br/>    response = conn.urlopen(method, u.request_uri, **kw)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:762: in urlopen<br/>    **response_kw<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:762: in urlopen<br/>    **response_kw<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:762: in urlopen<br/>    **response_kw<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:720: in urlopen<br/>    method, url, error=e, _pool=self, _stacktrace=sys.exc_info()[2]<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = Retry(total=0, connect=None, read=None, redirect=None, status=None), method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;, response = None<br/>error = NewConnectionError(&#x27;&lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;: Failed to establish a new connection: [Errno 61] Connection refused&#x27;,), _pool = &lt;urllib3.connectionpool.HTTPConnectionPool object at 0x107763b70&gt;<br/>_stacktrace = &lt;traceback object at 0x1077e6bc8&gt;<br/><br/>    def increment(<br/>        self,<br/>        method=None,<br/>        url=None,<br/>        response=None,<br/>        error=None,<br/>        _pool=None,<br/>        _stacktrace=None,<br/>    ):<br/>        &quot;&quot;&quot; Return a new Retry object with incremented retry counters.<br/>    <br/>        :param response: A response object, or None, if the server did not<br/>            return a response.<br/>        :type response: :class:`~urllib3.response.HTTPResponse`<br/>        :param Exception error: An error encountered during the request, or<br/>            None if the response was received successfully.<br/>    <br/>        :return: A new ``Retry`` object.<br/>        &quot;&quot;&quot;<br/>        if self.total is False and error:<br/>            # Disabled, indicate to re-raise the error.<br/>            raise six.reraise(type(error), error, _stacktrace)<br/>    <br/>        total = self.total<br/>        if total is not None:<br/>            total -= 1<br/>    <br/>        connect = self.connect<br/>        read = self.read<br/>        redirect = self.redirect<br/>        status_count = self.status<br/>        cause = &quot;unknown&quot;<br/>        status = None<br/>        redirect_location = None<br/>    <br/>        if error and self._is_connection_error(error):<br/>            # Connect retry?<br/>            if connect is False:<br/>                raise six.reraise(type(error), error, _stacktrace)<br/>            elif connect is not None:<br/>                connect -= 1<br/>    <br/>        elif error and self._is_read_error(error):<br/>            # Read retry?<br/>            if read is False or not self._is_method_retryable(method):<br/>                raise six.reraise(type(error), error, _stacktrace)<br/>            elif read is not None:<br/>                read -= 1<br/>    <br/>        elif response and response.get_redirect_location():<br/>            # Redirect retry?<br/>            if redirect is not None:<br/>                redirect -= 1<br/>            cause = &quot;too many redirects&quot;<br/>            redirect_location = response.get_redirect_location()<br/>            status = response.status<br/>    <br/>        else:<br/>            # Incrementing because of a server error like a 500 in<br/>            # status_forcelist and a the given method is in the whitelist<br/>            cause = ResponseError.GENERIC_ERROR<br/>            if response and response.status:<br/>                if status_count is not None:<br/>                    status_count -= 1<br/>                cause = ResponseError.SPECIFIC_ERROR.format(status_code=response.status)<br/>                status = response.status<br/>    <br/>        history = self.history + (<br/>            RequestHistory(method, url, error, status, redirect_location),<br/>        )<br/>    <br/>        new_retry = self.new(<br/>            total=total,<br/>            connect=connect,<br/>            read=read,<br/>            redirect=redirect,<br/>            status=status_count,<br/>            history=history,<br/>        )<br/>    <br/>        if new_retry.is_exhausted():<br/>&gt;           raise MaxRetryError(_pool, url, error or ResponseError(cause))<br/><span class="error">E           urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host=&#x27;localhost&#x27;, port=4723): Max retries exceeded with url: /wd/hub/session (Caused by NewConnectionError(&#x27;&lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;: Failed to establish a new connection: [Errno 61] Connection refused&#x27;,))</span><br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/util/retry.py:436: MaxRetryError<br/> -----------------------------Captured stdout setup------------------------------ <br/>{&#x27;caps&#x27;: {&#x27;platformName&#x27;: &#x27;Android&#x27;, &#x27;platformVersion&#x27;: &#x27;5.1.1&#x27;, &#x27;deviceName&#x27;: &#x27;127.0.0.1:62001&#x27;, &#x27;appPackage&#x27;: &#x27;com.lqr.wechat&#x27;, &#x27;appActivity&#x27;: &#x27;com.lqr.wechat.ui.activity.SplashActivity&#x27;, &#x27;unicodeKeyboard&#x27;: True, &#x27;resetKeyboard&#x27;: True, &#x27;autoLaunch&#x27;: False}, &#x27;server&#x27;: &#x27;http://localhost:4723/wd/hub&#x27;}
+<br/> -------------------------------Captured log setup------------------------------- <br/>[32mINFO    [0m selenium.webdriver.remote.remote_connection:remote_connection.py:117 Could not connect to port 4723 on host localhost
+[32mINFO    [0m selenium.webdriver.remote.remote_connection:remote_connection.py:136 Could not get IP address for host: localhost
+[35mDEBUG   [0m selenium.webdriver.remote.remote_connection:remote_connection.py:388 POST http://localhost:4723/wd/hub/session {&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;: &quot;127.0.0.1:62001&quot;, &quot;appium:appPackage&quot;: &quot;com.lqr.wechat&quot;, &quot;appium:appActivity&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;appium:unicodeKeyboard&quot;: true, &quot;appium:resetKeyboard&quot;: true, &quot;appium:autoLaunch&quot;: false}]}, &quot;desiredCapabilities&quot;: {&quot;platformName&quot;: &quot;Android&quot;, &quot;platformVersion&quot;: &quot;5.1.1&quot;, &quot;deviceName&quot;: &quot;127.0.0.1:62001&quot;, &quot;appPackage&quot;: &quot;com.lqr.wechat&quot;, &quot;appActivity&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}
+[35mDEBUG   [0m urllib3.connectionpool:connectionpool.py:225 Starting new HTTP connection (1): localhost:4723
+[35mDEBUG   [0m urllib3.util.retry:retry.py:438 Incremented Retry for (url=&#x27;/wd/hub/session&#x27;): Retry(total=2, connect=None, read=None, redirect=None, status=None)
+[33mWARNING [0m urllib3.connectionpool:connectionpool.py:748 Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by &#x27;NewConnectionError(&#x27;&lt;urllib3.connection.HTTPConnection object at 0x1075b7ef0&gt;: Failed to establish a new connection: [Errno 61] Connection refused&#x27;,)&#x27;: /wd/hub/session
+[35mDEBUG   [0m urllib3.connectionpool:connectionpool.py:225 Starting new HTTP connection (2): localhost:4723
+[35mDEBUG   [0m urllib3.util.retry:retry.py:438 Incremented Retry for (url=&#x27;/wd/hub/session&#x27;): Retry(total=1, connect=None, read=None, redirect=None, status=None)
+[33mWARNING [0m urllib3.connectionpool:connectionpool.py:748 Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by &#x27;NewConnectionError(&#x27;&lt;urllib3.connection.HTTPConnection object at 0x1077dc1d0&gt;: Failed to establish a new connection: [Errno 61] Connection refused&#x27;,)&#x27;: /wd/hub/session
+[35mDEBUG   [0m urllib3.connectionpool:connectionpool.py:225 Starting new HTTP connection (3): localhost:4723
+[35mDEBUG   [0m urllib3.util.retry:retry.py:438 Incremented Retry for (url=&#x27;/wd/hub/session&#x27;): Retry(total=0, connect=None, read=None, redirect=None, status=None)
+[33mWARNING [0m urllib3.connectionpool:connectionpool.py:748 Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by &#x27;NewConnectionError(&#x27;&lt;urllib3.connection.HTTPConnection object at 0x1077dc400&gt;: Failed to establish a new connection: [Errno 61] Connection refused&#x27;,)&#x27;: /wd/hub/session
+[35mDEBUG   [0m urllib3.connectionpool:connectionpool.py:225 Starting new HTTP connection (4): localhost:4723<br/></div></td></tr></tbody>
+      <tbody class="error results-table-row">
+        <tr>
+          <td class="col-result">Error</td>
+          <td class="col-name">test_cases/app_test/test_login.py::test_chat_with_yy::setup</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/><br/>    def _new_conn(self):<br/>        &quot;&quot;&quot; Establish a socket connection and set nodelay settings on it.<br/>    <br/>        :return: New socket connection.<br/>        &quot;&quot;&quot;<br/>        extra_kw = {}<br/>        if self.source_address:<br/>            extra_kw[&quot;source_address&quot;] = self.source_address<br/>    <br/>        if self.socket_options:<br/>            extra_kw[&quot;socket_options&quot;] = self.socket_options<br/>    <br/>        try:<br/>            conn = connection.create_connection(<br/>&gt;               (self._dns_host, self.port), self.timeout, **extra_kw<br/>            )<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connection.py:157: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>address = (&#x27;localhost&#x27;, 4723), timeout = &lt;object object at 0x105ab62a0&gt;, source_address = None, socket_options = [(6, 1, 1)]<br/><br/>    def create_connection(<br/>        address,<br/>        timeout=socket._GLOBAL_DEFAULT_TIMEOUT,<br/>        source_address=None,<br/>        socket_options=None,<br/>    ):<br/>        &quot;&quot;&quot;Connect to *address* and return the socket object.<br/>    <br/>        Convenience function.  Connect to *address* (a 2-tuple ``(host,<br/>        port)``) and return the socket object.  Passing the optional<br/>        *timeout* parameter will set the timeout on the socket instance<br/>        before attempting to connect.  If no *timeout* is supplied, the<br/>        global default timeout setting returned by :func:`getdefaulttimeout`<br/>        is used.  If *source_address* is set it must be a tuple of (host, port)<br/>        for the socket to bind as a source address before making the connection.<br/>        An host of &#x27;&#x27; or port 0 tells the OS to use the default.<br/>        &quot;&quot;&quot;<br/>    <br/>        host, port = address<br/>        if host.startswith(&quot;[&quot;):<br/>            host = host.strip(&quot;[]&quot;)<br/>        err = None<br/>    <br/>        # Using the value from allowed_gai_family() in the context of getaddrinfo lets<br/>        # us select whether to work with IPv4 DNS records, IPv6 records, or both.<br/>        # The original create_connection function always returns all records.<br/>        family = allowed_gai_family()<br/>    <br/>        for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):<br/>            af, socktype, proto, canonname, sa = res<br/>            sock = None<br/>            try:<br/>                sock = socket.socket(af, socktype, proto)<br/>    <br/>                # If provided, set socket level options before connecting.<br/>                _set_socket_options(sock, socket_options)<br/>    <br/>                if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:<br/>                    sock.settimeout(timeout)<br/>                if source_address:<br/>                    sock.bind(source_address)<br/>                sock.connect(sa)<br/>                return sock<br/>    <br/>            except socket.error as e:<br/>                err = e<br/>                if sock is not None:<br/>                    sock.close()<br/>                    sock = None<br/>    <br/>        if err is not None:<br/>&gt;           raise err<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/util/connection.py:84: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>address = (&#x27;localhost&#x27;, 4723), timeout = &lt;object object at 0x105ab62a0&gt;, source_address = None, socket_options = [(6, 1, 1)]<br/><br/>    def create_connection(<br/>        address,<br/>        timeout=socket._GLOBAL_DEFAULT_TIMEOUT,<br/>        source_address=None,<br/>        socket_options=None,<br/>    ):<br/>        &quot;&quot;&quot;Connect to *address* and return the socket object.<br/>    <br/>        Convenience function.  Connect to *address* (a 2-tuple ``(host,<br/>        port)``) and return the socket object.  Passing the optional<br/>        *timeout* parameter will set the timeout on the socket instance<br/>        before attempting to connect.  If no *timeout* is supplied, the<br/>        global default timeout setting returned by :func:`getdefaulttimeout`<br/>        is used.  If *source_address* is set it must be a tuple of (host, port)<br/>        for the socket to bind as a source address before making the connection.<br/>        An host of &#x27;&#x27; or port 0 tells the OS to use the default.<br/>        &quot;&quot;&quot;<br/>    <br/>        host, port = address<br/>        if host.startswith(&quot;[&quot;):<br/>            host = host.strip(&quot;[]&quot;)<br/>        err = None<br/>    <br/>        # Using the value from allowed_gai_family() in the context of getaddrinfo lets<br/>        # us select whether to work with IPv4 DNS records, IPv6 records, or both.<br/>        # The original create_connection function always returns all records.<br/>        family = allowed_gai_family()<br/>    <br/>        for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):<br/>            af, socktype, proto, canonname, sa = res<br/>            sock = None<br/>            try:<br/>                sock = socket.socket(af, socktype, proto)<br/>    <br/>                # If provided, set socket level options before connecting.<br/>                _set_socket_options(sock, socket_options)<br/>    <br/>                if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:<br/>                    sock.settimeout(timeout)<br/>                if source_address:<br/>                    sock.bind(source_address)<br/>&gt;               sock.connect(sa)<br/><span class="error">E               ConnectionRefusedError: [Errno 61] Connection refused</span><br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/util/connection.py:74: ConnectionRefusedError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>self = &lt;urllib3.connectionpool.HTTPConnectionPool object at 0x107763b70&gt;, method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;<br/>body = &#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;: ...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/>headers = {&#x27;Accept&#x27;: &#x27;application/json&#x27;, &#x27;Connection&#x27;: &#x27;keep-alive&#x27;, &#x27;Content-Type&#x27;: &#x27;application/json;charset=UTF-8&#x27;, &#x27;User-Agent&#x27;: &#x27;appium/python 0.48 (selenium/3.141.0 (python mac))&#x27;}, retries = Retry(total=0, connect=None, read=None, redirect=None, status=None)<br/>redirect = False, assert_same_host = False, timeout = &lt;object object at 0x105ab6810&gt;, pool_timeout = None, release_conn = True, chunked = False, body_pos = None, response_kw = {&#x27;request_url&#x27;: &#x27;http://localhost:4723/wd/hub/session&#x27;}, conn = None<br/>release_this_conn = True, err = None, clean_exit = False, timeout_obj = &lt;urllib3.util.timeout.Timeout object at 0x1077dc6d8&gt;, is_new_proxy_conn = False<br/><br/>    def urlopen(<br/>        self,<br/>        method,<br/>        url,<br/>        body=None,<br/>        headers=None,<br/>        retries=None,<br/>        redirect=True,<br/>        assert_same_host=True,<br/>        timeout=_Default,<br/>        pool_timeout=None,<br/>        release_conn=None,<br/>        chunked=False,<br/>        body_pos=None,<br/>        **response_kw<br/>    ):<br/>        &quot;&quot;&quot;<br/>        Get a connection from the pool and perform an HTTP request. This is the<br/>        lowest level call for making a request, so you&#x27;ll need to specify all<br/>        the raw details.<br/>    <br/>        .. note::<br/>    <br/>           More commonly, it&#x27;s appropriate to use a convenience method provided<br/>           by :class:`.RequestMethods`, such as :meth:`request`.<br/>    <br/>        .. note::<br/>    <br/>           `release_conn` will only behave as expected if<br/>           `preload_content=False` because we want to make<br/>           `preload_content=False` the default behaviour someday soon without<br/>           breaking backwards compatibility.<br/>    <br/>        :param method:<br/>            HTTP request method (such as GET, POST, PUT, etc.)<br/>    <br/>        :param body:<br/>            Data to send in the request body (useful for creating<br/>            POST requests, see HTTPConnectionPool.post_url for<br/>            more convenience).<br/>    <br/>        :param headers:<br/>            Dictionary of custom headers to send, such as User-Agent,<br/>            If-None-Match, etc. If None, pool headers are used. If provided,<br/>            these headers completely replace any pool-specific headers.<br/>    <br/>        :param retries:<br/>            Configure the number of retries to allow before raising a<br/>            :class:`~urllib3.exceptions.MaxRetryError` exception.<br/>    <br/>            Pass ``None`` to retry until you receive a response. Pass a<br/>            :class:`~urllib3.util.retry.Retry` object for fine-grained control<br/>            over different types of retries.<br/>            Pass an integer number to retry connection errors that many times,<br/>            but no other types of errors. Pass zero to never retry.<br/>    <br/>            If ``False``, then retries are disabled and any exception is raised<br/>            immediately. Also, instead of raising a MaxRetryError on redirects,<br/>            the redirect response will be returned.<br/>    <br/>        :type retries: :class:`~urllib3.util.retry.Retry`, False, or an int.<br/>    <br/>        :param redirect:<br/>            If True, automatically handle redirects (status codes 301, 302,<br/>            303, 307, 308). Each redirect counts as a retry. Disabling retries<br/>            will disable redirect, too.<br/>    <br/>        :param assert_same_host:<br/>            If ``True``, will make sure that the host of the pool requests is<br/>            consistent else will raise HostChangedError. When False, you can<br/>            use the pool on an HTTP proxy and request foreign hosts.<br/>    <br/>        :param timeout:<br/>            If specified, overrides the default timeout for this one<br/>            request. It may be a float (in seconds) or an instance of<br/>            :class:`urllib3.util.Timeout`.<br/>    <br/>        :param pool_timeout:<br/>            If set and the pool is set to block=True, then this method will<br/>            block for ``pool_timeout`` seconds and raise EmptyPoolError if no<br/>            connection is available within the time period.<br/>    <br/>        :param release_conn:<br/>            If False, then the urlopen call will not release the connection<br/>            back into the pool once a response is received (but will release if<br/>            you read the entire contents of the response such as when<br/>            `preload_content=True`). This is useful if you&#x27;re not preloading<br/>            the response&#x27;s content immediately. You will need to call<br/>            ``r.release_conn()`` on the response ``r`` to return the connection<br/>            back into the pool. If None, it takes the value of<br/>            ``response_kw.get(&#x27;preload_content&#x27;, True)``.<br/>    <br/>        :param chunked:<br/>            If True, urllib3 will send the body using chunked transfer<br/>            encoding. Otherwise, urllib3 will send the body using the standard<br/>            content-length form. Defaults to False.<br/>    <br/>        :param int body_pos:<br/>            Position to seek to in file-like body in the event of a retry or<br/>            redirect. Typically this won&#x27;t need to be set because urllib3 will<br/>            auto-populate the value when needed.<br/>    <br/>        :param \\**response_kw:<br/>            Additional parameters are passed to<br/>            :meth:`urllib3.response.HTTPResponse.from_httplib`<br/>        &quot;&quot;&quot;<br/>        if headers is None:<br/>            headers = self.headers<br/>    <br/>        if not isinstance(retries, Retry):<br/>            retries = Retry.from_int(retries, redirect=redirect, default=self.retries)<br/>    <br/>        if release_conn is None:<br/>            release_conn = response_kw.get(&quot;preload_content&quot;, True)<br/>    <br/>        # Check host<br/>        if assert_same_host and not self.is_same_host(url):<br/>            raise HostChangedError(self, url, retries)<br/>    <br/>        # Ensure that the URL we&#x27;re connecting to is properly encoded<br/>        if url.startswith(&quot;/&quot;):<br/>            url = six.ensure_str(_encode_target(url))<br/>        else:<br/>            url = six.ensure_str(parse_url(url).url)<br/>    <br/>        conn = None<br/>    <br/>        # Track whether `conn` needs to be released before<br/>        # returning/raising/recursing. Update this variable if necessary, and<br/>        # leave `release_conn` constant throughout the function. That way, if<br/>        # the function recurses, the original value of `release_conn` will be<br/>        # passed down into the recursive call, and its value will be respected.<br/>        #<br/>        # See issue #651 [1] for details.<br/>        #<br/>        # [1] &lt;https://github.com/shazow/urllib3/issues/651&gt;<br/>        release_this_conn = release_conn<br/>    <br/>        # Merge the proxy headers. Only do this in HTTP. We have to copy the<br/>        # headers dict so we can safely change it without those changes being<br/>        # reflected in anyone else&#x27;s copy.<br/>        if self.scheme == &quot;http&quot;:<br/>            headers = headers.copy()<br/>            headers.update(self.proxy_headers)<br/>    <br/>        # Must keep the exception bound to a separate variable or else Python 3<br/>        # complains about UnboundLocalError.<br/>        err = None<br/>    <br/>        # Keep track of whether we cleanly exited the except block. This<br/>        # ensures we do proper cleanup in finally.<br/>        clean_exit = False<br/>    <br/>        # Rewind body position, if needed. Record current position<br/>        # for future rewinds in the event of a redirect/retry.<br/>        body_pos = set_file_position(body, body_pos)<br/>    <br/>        try:<br/>            # Request a connection from the queue.<br/>            timeout_obj = self._get_timeout(timeout)<br/>            conn = self._get_conn(timeout=pool_timeout)<br/>    <br/>            conn.timeout = timeout_obj.connect_timeout<br/>    <br/>            is_new_proxy_conn = self.proxy is not None and not getattr(<br/>                conn, &quot;sock&quot;, None<br/>            )<br/>            if is_new_proxy_conn:<br/>                self._prepare_proxy(conn)<br/>    <br/>            # Make the request on the httplib connection object.<br/>            httplib_response = self._make_request(<br/>                conn,<br/>                method,<br/>                url,<br/>                timeout=timeout_obj,<br/>                body=body,<br/>                headers=headers,<br/>&gt;               chunked=chunked,<br/>            )<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:672: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connectionpool.HTTPConnectionPool object at 0x107763b70&gt;, conn = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;, method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;, timeout = &lt;urllib3.util.timeout.Timeout object at 0x1077dc6d8&gt;, chunked = False<br/>httplib_request_kw = {&#x27;body&#x27;: &#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:devi... &#x27;Content-Type&#x27;: &#x27;application/json;charset=UTF-8&#x27;, &#x27;User-Agent&#x27;: &#x27;appium/python 0.48 (selenium/3.141.0 (python mac))&#x27;}}<br/>timeout_obj = &lt;urllib3.util.timeout.Timeout object at 0x1077dc6a0&gt;<br/><br/>    def _make_request(<br/>        self, conn, method, url, timeout=_Default, chunked=False, **httplib_request_kw<br/>    ):<br/>        &quot;&quot;&quot;<br/>        Perform a request on a given urllib connection object taken from our<br/>        pool.<br/>    <br/>        :param conn:<br/>            a connection from one of our connection pools<br/>    <br/>        :param timeout:<br/>            Socket timeout in seconds for the request. This can be a<br/>            float or integer, which will set the same timeout value for<br/>            the socket connect and the socket read, or an instance of<br/>            :class:`urllib3.util.Timeout`, which gives you more fine-grained<br/>            control over your timeouts.<br/>        &quot;&quot;&quot;<br/>        self.num_requests += 1<br/>    <br/>        timeout_obj = self._get_timeout(timeout)<br/>        timeout_obj.start_connect()<br/>        conn.timeout = timeout_obj.connect_timeout<br/>    <br/>        # Trigger any extra validation we need to do.<br/>        try:<br/>            self._validate_conn(conn)<br/>        except (SocketTimeout, BaseSSLError) as e:<br/>            # Py2 raises this as a BaseSSLError, Py3 raises it as socket timeout.<br/>            self._raise_timeout(err=e, url=url, timeout_value=conn.timeout)<br/>            raise<br/>    <br/>        # conn.request() calls httplib.*.request, not the method in<br/>        # urllib3.request. It also calls makefile (recv) on the socket.<br/>        if chunked:<br/>            conn.request_chunked(method, url, **httplib_request_kw)<br/>        else:<br/>&gt;           conn.request(method, url, **httplib_request_kw)<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:387: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;, method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;<br/>body = &#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;: ...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/>headers = {&#x27;Accept&#x27;: &#x27;application/json&#x27;, &#x27;Connection&#x27;: &#x27;keep-alive&#x27;, &#x27;Content-Type&#x27;: &#x27;application/json;charset=UTF-8&#x27;, &#x27;User-Agent&#x27;: &#x27;appium/python 0.48 (selenium/3.141.0 (python mac))&#x27;}<br/><br/>    def request(self, method, url, body=None, headers={}, *,<br/>                encode_chunked=False):<br/>        &quot;&quot;&quot;Send a complete request to the server.&quot;&quot;&quot;<br/>&gt;       self._send_request(method, url, body, headers, encode_chunked)<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:1239: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;, method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;<br/>body = b&#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;:...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/>headers = {&#x27;Accept&#x27;: &#x27;application/json&#x27;, &#x27;Connection&#x27;: &#x27;keep-alive&#x27;, &#x27;Content-Type&#x27;: &#x27;application/json;charset=UTF-8&#x27;, &#x27;User-Agent&#x27;: &#x27;appium/python 0.48 (selenium/3.141.0 (python mac))&#x27;}, encode_chunked = False<br/><br/>    def _send_request(self, method, url, body, headers, encode_chunked):<br/>        # Honor explicitly requested Host: and Accept-Encoding: headers.<br/>        header_names = frozenset(k.lower() for k in headers)<br/>        skips = {}<br/>        if &#x27;host&#x27; in header_names:<br/>            skips[&#x27;skip_host&#x27;] = 1<br/>        if &#x27;accept-encoding&#x27; in header_names:<br/>            skips[&#x27;skip_accept_encoding&#x27;] = 1<br/>    <br/>        self.putrequest(method, url, **skips)<br/>    <br/>        # chunked encoding will happen if HTTP/1.1 is used and either<br/>        # the caller passes encode_chunked=True or the following<br/>        # conditions hold:<br/>        # 1. content-length has not been explicitly set<br/>        # 2. the body is a file or iterable, but not a str or bytes-like<br/>        # 3. Transfer-Encoding has NOT been explicitly set by the caller<br/>    <br/>        if &#x27;content-length&#x27; not in header_names:<br/>            # only chunk body if not explicitly set for backwards<br/>            # compatibility, assuming the client code is already handling the<br/>            # chunking<br/>            if &#x27;transfer-encoding&#x27; not in header_names:<br/>                # if content-length cannot be automatically determined, fall<br/>                # back to chunked encoding<br/>                encode_chunked = False<br/>                content_length = self._get_content_length(body, method)<br/>                if content_length is None:<br/>                    if body is not None:<br/>                        if self.debuglevel &gt; 0:<br/>                            print(&#x27;Unable to determine size of %r&#x27; % body)<br/>                        encode_chunked = True<br/>                        self.putheader(&#x27;Transfer-Encoding&#x27;, &#x27;chunked&#x27;)<br/>                else:<br/>                    self.putheader(&#x27;Content-Length&#x27;, str(content_length))<br/>        else:<br/>            encode_chunked = False<br/>    <br/>        for hdr, value in headers.items():<br/>            self.putheader(hdr, value)<br/>        if isinstance(body, str):<br/>            # RFC 2616 Section 3.7.1 says that text default has a<br/>            # default charset of iso-8859-1.<br/>            body = _encode(body, &#x27;body&#x27;)<br/>&gt;       self.endheaders(body, encode_chunked=encode_chunked)<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:1285: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/>message_body = b&#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;:...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/><br/>    def endheaders(self, message_body=None, *, encode_chunked=False):<br/>        &quot;&quot;&quot;Indicate that the last header line has been sent to the server.<br/>    <br/>        This method sends the request to the server.  The optional message_body<br/>        argument can be used to pass a message body associated with the<br/>        request.<br/>        &quot;&quot;&quot;<br/>        if self.__state == _CS_REQ_STARTED:<br/>            self.__state = _CS_REQ_SENT<br/>        else:<br/>            raise CannotSendHeader()<br/>&gt;       self._send_output(message_body, encode_chunked=encode_chunked)<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:1234: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/>message_body = b&#x27;{&quot;capabilities&quot;: {&quot;firstMatch&quot;: [{&quot;platformName&quot;: &quot;Android&quot;, &quot;appium:platformVersion&quot;: &quot;5.1.1&quot;, &quot;appium:deviceName&quot;:...y&quot;: &quot;com.lqr.wechat.ui.activity.SplashActivity&quot;, &quot;unicodeKeyboard&quot;: true, &quot;resetKeyboard&quot;: true, &quot;autoLaunch&quot;: false}}&#x27;<br/>encode_chunked = False<br/><br/>    def _send_output(self, message_body=None, encode_chunked=False):<br/>        &quot;&quot;&quot;Send the currently buffered request and clear the buffer.<br/>    <br/>        Appends an extra \\r\\n to the buffer.<br/>        A message_body may be specified, to be appended to the request.<br/>        &quot;&quot;&quot;<br/>        self._buffer.extend((b&quot;&quot;, b&quot;&quot;))<br/>        msg = b&quot;\r\n&quot;.join(self._buffer)<br/>        del self._buffer[:]<br/>&gt;       self.send(msg)<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:1026: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/>data = b&#x27;POST /wd/hub/session HTTP/1.1\r\nHost: localhost:4723\r\nAccept-Encoding: identity\r\nContent-Length: 608\r\nAccept:...json;charset=UTF-8\r\nUser-Agent: appium/python 0.48 (selenium/3.141.0 (python mac))\r\nConnection: keep-alive\r\n\r\n&#x27;<br/><br/>    def send(self, data):<br/>        &quot;&quot;&quot;Send `data&#x27; to the server.<br/>        ``data`` can be a string object, a bytes object, an array object, a<br/>        file-like object that supports a .read() method, or an iterable object.<br/>        &quot;&quot;&quot;<br/>    <br/>        if self.sock is None:<br/>            if self.auto_open:<br/>&gt;               self.connect()<br/><br/>/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/http/client.py:964: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/><br/>    def connect(self):<br/>&gt;       conn = self._new_conn()<br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connection.py:184: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;<br/><br/>    def _new_conn(self):<br/>        &quot;&quot;&quot; Establish a socket connection and set nodelay settings on it.<br/>    <br/>        :return: New socket connection.<br/>        &quot;&quot;&quot;<br/>        extra_kw = {}<br/>        if self.source_address:<br/>            extra_kw[&quot;source_address&quot;] = self.source_address<br/>    <br/>        if self.socket_options:<br/>            extra_kw[&quot;socket_options&quot;] = self.socket_options<br/>    <br/>        try:<br/>            conn = connection.create_connection(<br/>                (self._dns_host, self.port), self.timeout, **extra_kw<br/>            )<br/>    <br/>        except SocketTimeout:<br/>            raise ConnectTimeoutError(<br/>                self,<br/>                &quot;Connection to %s timed out. (connect timeout=%s)&quot;<br/>                % (self.host, self.timeout),<br/>            )<br/>    <br/>        except SocketError as e:<br/>            raise NewConnectionError(<br/>&gt;               self, &quot;Failed to establish a new connection: %s&quot; % e<br/>            )<br/><span class="error">E           urllib3.exceptions.NewConnectionError: &lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;: Failed to establish a new connection: [Errno 61] Connection refused</span><br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connection.py:169: NewConnectionError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>variables = {&#x27;caps&#x27;: {&#x27;appActivity&#x27;: &#x27;com.lqr.wechat.ui.activity.SplashActivity&#x27;, &#x27;appPackage&#x27;: &#x27;com.lqr.wechat&#x27;, &#x27;autoLaunch&#x27;: False, &#x27;deviceName&#x27;: &#x27;127.0.0.1:62001&#x27;, ...}, &#x27;server&#x27;: &#x27;http://localhost:4723/wd/hub&#x27;}<br/><br/>    @pytest.fixture(scope=&#x27;session&#x27;)<br/>    def driver(variables):<br/>        print(variables)<br/>        caps = variables[&#x27;caps&#x27;]<br/>        server = variables[&#x27;server&#x27;]<br/>&gt;       driver = webdriver.Remote(server, caps)<br/><br/>test_cases/app_test/conftest.py:13: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/>../../../venvs/longteng17/lib/python3.6/site-packages/appium/webdriver/webdriver.py:144: in __init__<br/>    proxy<br/>../../../venvs/longteng17/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py:157: in __init__<br/>    self.start_session(capabilities, browser_profile)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/appium/webdriver/webdriver.py:219: in start_session<br/>    response = self.execute(RemoteCommand.NEW_SESSION, parameters)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/selenium/webdriver/remote/webdriver.py:319: in execute<br/>    response = self.command_executor.execute(driver_command, params)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/selenium/webdriver/remote/remote_connection.py:374: in execute<br/>    return self._request(command_info[0], url, body=data)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/selenium/webdriver/remote/remote_connection.py:397: in _request<br/>    resp = self._conn.request(method, url, body=body, headers=headers)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/request.py:80: in request<br/>    method, url, fields=fields, headers=headers, **urlopen_kw<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/request.py:171: in request_encode_body<br/>    return self.urlopen(method, url, **extra_kw)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/poolmanager.py:330: in urlopen<br/>    response = conn.urlopen(method, u.request_uri, **kw)<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:762: in urlopen<br/>    **response_kw<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:762: in urlopen<br/>    **response_kw<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:762: in urlopen<br/>    **response_kw<br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/connectionpool.py:720: in urlopen<br/>    method, url, error=e, _pool=self, _stacktrace=sys.exc_info()[2]<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = Retry(total=0, connect=None, read=None, redirect=None, status=None), method = &#x27;POST&#x27;, url = &#x27;/wd/hub/session&#x27;, response = None<br/>error = NewConnectionError(&#x27;&lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;: Failed to establish a new connection: [Errno 61] Connection refused&#x27;,), _pool = &lt;urllib3.connectionpool.HTTPConnectionPool object at 0x107763b70&gt;<br/>_stacktrace = &lt;traceback object at 0x1077e6bc8&gt;<br/><br/>    def increment(<br/>        self,<br/>        method=None,<br/>        url=None,<br/>        response=None,<br/>        error=None,<br/>        _pool=None,<br/>        _stacktrace=None,<br/>    ):<br/>        &quot;&quot;&quot; Return a new Retry object with incremented retry counters.<br/>    <br/>        :param response: A response object, or None, if the server did not<br/>            return a response.<br/>        :type response: :class:`~urllib3.response.HTTPResponse`<br/>        :param Exception error: An error encountered during the request, or<br/>            None if the response was received successfully.<br/>    <br/>        :return: A new ``Retry`` object.<br/>        &quot;&quot;&quot;<br/>        if self.total is False and error:<br/>            # Disabled, indicate to re-raise the error.<br/>            raise six.reraise(type(error), error, _stacktrace)<br/>    <br/>        total = self.total<br/>        if total is not None:<br/>            total -= 1<br/>    <br/>        connect = self.connect<br/>        read = self.read<br/>        redirect = self.redirect<br/>        status_count = self.status<br/>        cause = &quot;unknown&quot;<br/>        status = None<br/>        redirect_location = None<br/>    <br/>        if error and self._is_connection_error(error):<br/>            # Connect retry?<br/>            if connect is False:<br/>                raise six.reraise(type(error), error, _stacktrace)<br/>            elif connect is not None:<br/>                connect -= 1<br/>    <br/>        elif error and self._is_read_error(error):<br/>            # Read retry?<br/>            if read is False or not self._is_method_retryable(method):<br/>                raise six.reraise(type(error), error, _stacktrace)<br/>            elif read is not None:<br/>                read -= 1<br/>    <br/>        elif response and response.get_redirect_location():<br/>            # Redirect retry?<br/>            if redirect is not None:<br/>                redirect -= 1<br/>            cause = &quot;too many redirects&quot;<br/>            redirect_location = response.get_redirect_location()<br/>            status = response.status<br/>    <br/>        else:<br/>            # Incrementing because of a server error like a 500 in<br/>            # status_forcelist and a the given method is in the whitelist<br/>            cause = ResponseError.GENERIC_ERROR<br/>            if response and response.status:<br/>                if status_count is not None:<br/>                    status_count -= 1<br/>                cause = ResponseError.SPECIFIC_ERROR.format(status_code=response.status)<br/>                status = response.status<br/>    <br/>        history = self.history + (<br/>            RequestHistory(method, url, error, status, redirect_location),<br/>        )<br/>    <br/>        new_retry = self.new(<br/>            total=total,<br/>            connect=connect,<br/>            read=read,<br/>            redirect=redirect,<br/>            status=status_count,<br/>            history=history,<br/>        )<br/>    <br/>        if new_retry.is_exhausted():<br/>&gt;           raise MaxRetryError(_pool, url, error or ResponseError(cause))<br/><span class="error">E           urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host=&#x27;localhost&#x27;, port=4723): Max retries exceeded with url: /wd/hub/session (Caused by NewConnectionError(&#x27;&lt;urllib3.connection.HTTPConnection object at 0x1077dc630&gt;: Failed to establish a new connection: [Errno 61] Connection refused&#x27;,))</span><br/><br/>../../../venvs/longteng17/lib/python3.6/site-packages/urllib3/util/retry.py:436: MaxRetryError<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">test_cases/api_test/test_add_fuel_card.py::test_add_fuel_card_normal</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;/Users/apple/Documents/Projects/longteng/longteng17/test_cases/api_test/test_add_fuel_card.py&#x27;, 18, &#x27;Skipped: 卡号: hzc_00001 已存在&#x27;)<br/> -------------------------------Captured log setup------------------------------- <br/>[35mDEBUG   [0m urllib3.connectionpool:connectionpool.py:225 Starting new HTTP connection (1): 115.28.108.130:8080
+[35mDEBUG   [0m urllib3.connectionpool:connectionpool.py:437 http://115.28.108.130:8080 &quot;GET / HTTP/1.1&quot; 200 264
+[35mDEBUG   [0m root:data.py:12 加载yaml文件: /Users/apple/Documents/Projects/longteng/longteng17/data/api_data.yaml<br/> -------------------------------Captured log call-------------------------------- <br/>[32mINFO    [0m root:test_add_fuel_card.py:11 正常添加用例
+[32mINFO    [0m root:db.py:59 查询加油卡: hzc_00001
+[35mDEBUG   [0m root:db.py:37 查询sql: SELECT id FROM cardinfo WHERE cardNumber=&quot;hzc_00001&quot;
+[35mDEBUG   [0m root:db.py:40 查询数据: [{&#x27;id&#x27;: 742329795}]<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">test_cases/web_test/ecshop/test_add_goods.py::test_add_goods::setup</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;/Users/apple/Documents/venvs/longteng17/lib/python3.6/site-packages/pytest_selenium/safety.py&#x27;, 82, &quot;Skipped: This test is destructive and the target URL is considered a sensitive environment. If this test is not destructive, add the &#x27;nondestructive&#x27; marker to it. Sensitive URL: http://115.28.108.130:8080&quot;)<br/></div></td></tr></tbody></table></body></html>
