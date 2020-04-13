@@ -9,6 +9,7 @@ class TestDemo1(unittest.TestCase):
 
     @ddt.data(*data)
     def test_success(self, value):
+        self.tags = ['success']
         print('success with %s' %value)
 
     def test_fail(self):
@@ -17,6 +18,7 @@ class TestDemo1(unittest.TestCase):
         assert 0
 
     def test_error(self):
+        self.tags = ['error']
         print('error')
         logging.error('error')
         open('abc.txt')

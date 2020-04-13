@@ -1,9 +1,10 @@
 import os
 import sys
-sys.path.append('/Users/apple/Documents/Projects/Self/Pythonz/htmlrunner')
+sys.path.append('/Users/apple/Documents/Projects/Self/PyPi/htmlrunner')
 import unittest
-from htmlrunner import Runner, group_suites_by_class, flatten_suite, HTMLRunner
-from htmlrunner import Result
+from htmlrunner import Runner,  HTMLRunner
+from htmlrunner.loader import group_suites_by_class, flatten_suite
+from htmlrunner.result import Result
 
 basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 testpath = os.path.join(basedir, 'tests', 'data')

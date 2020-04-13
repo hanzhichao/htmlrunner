@@ -35,7 +35,7 @@ setup(
     packages=find_packages(include=['htmlrunner']),
     setup_requires=setup_requirements,
     url='https://github.com/hanzhichao/htmlrunner',
-    version='0.10',
+    version='0.11',
     zip_safe=True,
     install_requires=['jinja2', 'logz']
 )

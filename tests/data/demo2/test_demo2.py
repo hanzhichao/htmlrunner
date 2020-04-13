@@ -15,14 +15,15 @@ def setUpModule():
 
 
 def tearDownModule():
-    sleep(randint(1,3))
+    # time.sleep(randint(1,3))
     print('teardown module')
 
 
 class TestDemo2(unittest.TestCase):
+    """测试Demo2"""
     @classmethod
     def setUpClass(cls):
-        sleep(1)
+        # time.sleep(1)
         print('setup class')
 
     @classmethod
@@ -37,6 +38,7 @@ class TestDemo2(unittest.TestCase):
 
 
     def test_success(self):
+        """测试成功"""
         # print('hello', vars())
         # print(self.__dict__)
         # print(self.testMethod)
@@ -46,6 +48,7 @@ class TestDemo2(unittest.TestCase):
         print('success')
 
     def test_timeout(self):
+        """测试超时"""
         print('timeout')
         print(self.tags)
         time.sleep(3)

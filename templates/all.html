@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1 class="pt-4">{{title}}</h1>
+    {% if description %}<h6>{{description}}</h6>{% endif %}
+    {% if tester %}<h6>执行人: {{tester}}</h6>{% endif %}
+    <h6>概要: 总数: {{total}} 执行数: {{run_num}} 通过: {{pass_num}} 失败: {{fail_num}} 出错: {{error_num}} 跳过: {{skipped_num}}</h6>
+    <h6 class="pb-2">开始时间: {{start_at}} 结束时间: {{end_at}} 耗时: {{duration}}s</h6>
+    <h6>platform: {{ platform }} system: {{ system }} python version: {{ python_version }}</h6>
+    <a href="#env_info" data-toggle="collapse">环境信息</a>
+    <div id="env_info" class="collapse text-sm">
+        {% for key, value in env.items() %}
+            {{ key }}={{ value }}<br>
+        {% endfor %}
+    </div>
+    <table class="table table-sm table-striped table-bordered table-hover">
+        <thead><tr><th>序号</th><th>用例</th><th>总数</th><th>通过</th><th>失败</th><th>出错</th><th>耗时</th><th>操作</th></tr></thead>
+        <tbody>
+        {% for test_class in test_classes %}
+            <tr><td colspan="2">{{test_class.name}}</td><td>{{test_class.total}}</td><td>{{test_class.pass_num}}</td><td>{{test_class.fail_num}}</td><td>{{test_class.error_num}}</td><td>0s</td><td>&nbsp;</td></tr>
+            {% for test in test_class.test_cases %}
+                <tr class="ml-md-3
+                {% if test.status in ['PASS', 'XFAIL'] %}table-success
+                {% elif test.status in ['FAIL', 'XPASS'] %}table-danger
+                {% elif test.status=='ERROR' %}table-warning
+                {% else %}table-secondary
+                {% endif %}">
+                    <td>{{test.sn}}</td><td>{{test.full_name}}:{{ test.doc }}</td>
+                    <td colspan="4">{{test.status}}
+                    </td><td>{{test.duration}}</td>
+                    <td><a href="#case_{{ test.sn }}" data-toggle="collapse">Detail</a></td>
+                </tr>
+                <tr id=case_{{ test.sn }} class="collapse">
+                    <td colspan="8">
+                        <span class="badge badge-secondary">标签</span> {{ test.tags }}<br/>
+                        <span class="badge badge-secondary">等级</span> {{test.level}}<br/>
+                        <span class="badge badge-secondary">开始时间</span> {{ test.start_at }} <br/>
+                        <span class="badge badge-secondary">结束时间</span> {{ test.end_at }}<br/>
+                        <span class="badge badge-secondary">代码</span> <pre>{{ test.code}}</pre><br/>
+                        {% if test.output %}<span class="badge badge-secondary">输出: </span><pre>{{test.output}}</pre>{% endif %}<br/>
+                        {% if test.exec_info %}<span class="badge badge-secondary">报错信息:</span><pre>{{test.exec_info}}</pre>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
