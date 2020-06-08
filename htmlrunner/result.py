@@ -82,7 +82,7 @@ class Result(unittest.TestResult):
         )
 
     def register(self, test, status, exec_info='', setup_status=None, teardown_status=None, error_code=None):
-        output = self.complete_output()
+        test.output = output = self.complete_output()
         sys.stdout.write(output)
 
         test_module_name = test.__module__
@@ -103,7 +103,9 @@ class Result(unittest.TestResult):
 
         start_at = test.start_at if hasattr(test, 'start_at') else None
         end_at = test.end_at if hasattr(test, 'end_at') else None  # 注册时未结束无end_at
-        duration =(test.end_at - test.start_at) if start_at and end_at else 0
+        test.duration = duration = (test.end_at - test.start_at) if start_at and end_at else 0
+        test.status = status
+
         try:
             code = inspect.getsource(test_method)
         except Exception as ex:

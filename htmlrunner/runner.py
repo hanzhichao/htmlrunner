@@ -5,6 +5,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from unittest.suite import _isnotsuite
 
+from logz import log
 from jinja2 import Template
 
 from htmlrunner.loader import flatten_suite, group_suites_by_class
@@ -56,6 +57,7 @@ class Runner(object):
 
     def run_suite(self, suite, result, run_func=None, interval=None):
         """基础运行suite方法,支持指定运行方法"""
+        log.info('执行测试套件:', suite)
         topLevel = False
         if getattr(result, '_testRunEntered', False) is False:
             result._testRunEntered = topLevel = True
@@ -65,8 +67,9 @@ class Runner(object):
                 setup_ok = run_suite_before_case(suite, test, result)
                 if not setup_ok:
                     continue
-
+            log.info('执行用例:', test.id())
             run_func(test, result) if run_func else test(result)  # 可能是suite 可能有异常
+            log.info('执行结果:', test.status, '执行时间:', test.duration)
             time.sleep(interval) if interval else None
 
             if suite._cleanup:
@@ -123,7 +126,7 @@ class HTMLRunner(Runner):
                  threads=None, timeout=None, by_class=True,  # 运行选项
                  **kwargs):  # 额外信息
         self.report_file = datetime.now().strftime(report_file or DEFAULT_REPORT_FILE)
-        self.log_file = datetime.now().strftime(log_file or DEFAULT_LOG_FILE)
+        self.log_file = log.file = datetime.now().strftime(log_file or DEFAULT_LOG_FILE)
 
         self.title = title or DEFAULT_REPORT_TITLE
         self.description = description

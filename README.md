@@ -2,7 +2,7 @@
 
 HTMLRunner for unittest
 
-![](./report.png)
+![](./report_detail.png)
 
 ## Feature
 - 日志
@@ -32,6 +32,7 @@ HTMLRunner for unittest
 - [x] tag实现
 - [x] level实现
 - [x] timeout实现
+- [ ] 拦截请求和响应
 
 
 ## Install

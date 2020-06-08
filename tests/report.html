@@ -1,558 +1,671 @@
+
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
+<html>
+  <head>
+    <meta charset="utf-8"/>
     <title>测试报告</title>
-    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
-    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
-    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
-</head>
-<body>
-<div class="container">
-    <h1 class="pt-4">测试报告</h1>
-    <h6>测试报告描述</h6>
-    <h6>执行人: Hzc</h6>
-    <h6>概要: 总数: 16 执行数: 16 通过: 6 失败: 3 出错: 4 跳过: 3</h6>
-    <h6 class="pb-2">开始时间: 2020-04-13 19:14:11.937106 结束时间: 2020-04-13 19:14:11.952408 耗时: 0:00:00.015302s</h6>
-    <h6>platform: Darwin-19.2.0-x86_64-i386-64bit system: Darwin python version: 3.6.5</h6>
-    <a href="#env_info" data-toggle="collapse">环境信息</a>
-    <div id="env_info" class="collapse text-sm">
+    <style>body {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	min-width: 1200px;
+	color: #999;
+}
+
+h1 {
+	font-size: 24px;
+	color: black;
+}
+
+h2 {
+	font-size: 16px;
+	color: black;
+}
+
+p {
+    color: black;
+}
+
+a {
+	color: #999;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+
+#environment td {
+	padding: 5px;
+	border: 1px solid #E6E6E6;
+}
+
+#environment tr:nth-child(odd) {
+	background-color: #f6f6f6;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed, .passed .col-result {
+	color: green;
+}
+span.skipped, span.xfailed, span.rerun, .skipped .col-result, .xfailed .col-result, .rerun .col-result {
+	color: orange;
+}
+span.error, span.failed, span.xpassed, .error .col-result, .failed .col-result, .xpassed .col-result  {
+	color: red;
+}
+
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+
+#results-table {
+	border: 1px solid #e6e6e6;
+	color: #999;
+	font-size: 12px;
+	width: 100%
+}
+
+#results-table th, #results-table td {
+	padding: 5px;
+	border: 1px solid #E6E6E6;
+	text-align: left
+}
+#results-table th {
+	font-weight: bold
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+
+.log:only-child {
+	height: inherit
+}
+.log {
+	background-color: #e6e6e6;
+	border: 1px solid #e6e6e6;
+	color: black;
+	display: block;
+	font-family: "Courier New", Courier, monospace;
+	height: 230px;
+	overflow-y: scroll;
+	padding: 5px;
+	white-space: pre-wrap
+}
+div.image {
+	border: 1px solid #e6e6e6;
+	float: right;
+	height: 240px;
+	margin-left: 5px;
+	overflow: hidden;
+	width: 320px
+}
+div.image img {
+	width: 320px
+}
+.collapsed {
+	display: none;
+}
+.expander::after {
+	content: " (show details)";
+	color: #BBB;
+	font-style: italic;
+	cursor: pointer;
+}
+.collapser::after {
+	content: " (hide details)";
+	color: #BBB;
+	font-style: italic;
+	cursor: pointer;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+	cursor: pointer;
+}
+
+.sort-icon {
+	font-size: 0px;
+	float: left;
+	margin-right: 5px;
+	margin-top: 5px;
+	/*triangle*/
+	width: 0;
+	height: 0;
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+}
+
+.inactive .sort-icon {
+	/*finish triangle*/
+	border-top: 8px solid #E6E6E6;
+}
+
+.asc.active .sort-icon {
+	/*finish triangle*/
+	border-bottom: 8px solid #999;
+}
+
+.desc.active .sort-icon {
+	/*finish triangle*/
+	border-top: 8px solid #999;
+}
+</style></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function find_all(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sort_column(elem) {
+    toggle_sort_states(elem);
+    var colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    var key;
+    if (elem.classList.contains('numeric')) {
+        key = key_num;
+    } else if (elem.classList.contains('result')) {
+        key = key_result;
+    } else {
+        key = key_alpha;
+    }
+    sort_table(elem, key(colIndex));
+}
+
+function show_all_extras() {
+    find_all('.col-result').forEach(show_extras);
+}
+
+function hide_all_extras() {
+    find_all('.col-result').forEach(hide_extras);
+}
+
+function show_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.remove("collapsed");
+    expandcollapse.classList.remove("expander");
+    expandcollapse.classList.add("collapser");
+}
+
+function hide_extras(colresult_elem) {
+    var extras = colresult_elem.parentNode.nextElementSibling;
+    var expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.add("collapsed");
+    expandcollapse.classList.remove("collapser");
+    expandcollapse.classList.add("expander");
+}
+
+function show_filters() {
+    var filter_items = document.getElementsByClassName('filter');
+    for (var i = 0; i < filter_items.length; i++)
+        filter_items[i].hidden = false;
+}
+
+function add_collapse() {
+    // Add links for show/hide all
+    var resulttable = find('table#results-table');
+    var showhideall = document.createElement("p");
+    showhideall.innerHTML = '<a href="javascript:show_all_extras()">Show all details</a> / ' +
+                            '<a href="javascript:hide_all_extras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    find_all('.col-result').forEach(function(elem) {
+        var collapsed = get_query_parameter('collapsed') || 'Passed';
+        var extras = elem.parentNode.nextElementSibling;
+        var expandcollapse = document.createElement("span");
+        if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add("collapsed");
+            expandcollapse.classList.add("expander");
+        } else {
+            expandcollapse.classList.add("collapser");
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener("click", function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains("collapsed")) {
+                show_extras(event.currentTarget);
+            } else {
+                hide_extras(event.currentTarget);
+            }
+        });
+    })
+}
+
+function get_query_parameter(name) {
+    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () {
+    reset_sort_headers();
+
+    add_collapse();
+
+    show_filters();
+
+    toggle_sort_states(find('.initial-sort'));
+
+    find_all('.sortable').forEach(function(elem) {
+        elem.addEventListener("click",
+                              function(event) {
+                                  sort_column(elem);
+                              }, false)
+    });
+
+};
+
+function sort_table(clicked, key_func) {
+    var rows = find_all('.results-table-row');
+    var reversed = !clicked.classList.contains('asc');
+    var sorted_rows = sort(rows, key_func, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    var thead = document.getElementById("results-table-head");
+    document.getElementById('results-table').remove();
+    var parent = document.createElement("table");
+    parent.id = "results-table";
+    parent.appendChild(thead);
+    sorted_rows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName("BODY")[0].appendChild(parent);
+}
+
+function sort(items, key_func, reversed) {
+    var sort_array = items.map(function(item, i) {
+        return [key_func(item), i];
+    });
+
+    sort_array.sort(function(a, b) {
+        var key_a = a[0];
+        var key_b = b[0];
+
+        if (key_a == key_b) return 0;
+
+        if (reversed) {
+            return (key_a < key_b ? 1 : -1);
+        } else {
+            return (key_a > key_b ? 1 : -1);
+        }
+    });
+
+    return sort_array.map(function(item) {
+        var index = item[1];
+        return items[index];
+    });
+}
+
+function key_alpha(col_index) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[col_index].firstChild.data.toLowerCase();
+    };
+}
+
+function key_num(col_index) {
+    return function(elem) {
+        return parseFloat(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function key_result(col_index) {
+    return function(elem) {
+        var strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+                       'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function reset_sort_headers() {
+    find_all('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    find_all('.sortable').forEach(function(elem) {
+        var icon = document.createElement("div");
+        icon.className = "sort-icon";
+        icon.textContent = "vvv";
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove("desc", "active");
+        elem.classList.add("asc", "inactive");
+    });
+}
+
+function toggle_sort_states(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        reset_sort_headers();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function is_all_rows_hidden(value) {
+  return value.hidden == false;
+}
+
+function filter_table(elem) {
+    var outcome_att = "data-test-result";
+    var outcome = elem.getAttribute(outcome_att);
+    class_outcome = outcome + " results-table-row";
+    var outcome_rows = document.getElementsByClassName(class_outcome);
+
+    for(var i = 0; i < outcome_rows.length; i++){
+        outcome_rows[i].hidden = !elem.checked;
+    }
+
+    var rows = find_all('.results-table-row').filter(is_all_rows_hidden);
+    var all_rows_hidden = rows.length == 0 ? true : false;
+    var not_found_message = document.getElementById("not-found-message");
+    not_found_message.hidden = !all_rows_hidden;
+}
+</script>
+    <h1>测试报告</h1>
+    <p>Report generated on 2020-06-01 20:04:57.270263 by <a href="https://pypi.python.org/pypi/reportz">reportz</a></p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>Base URL</td>
+        <td><a href="http://115.28.108.130:8080" target="_blank">http://115.28.108.130:8080</a></td></tr>
+      <tr>
+        <td>Capabilities</td>
+        <td>{}</td></tr>
+      <tr>
+        <td>Driver</td>
+        <td>chrome</td></tr>
+      <tr>
+        <td>JAVA_HOME</td>
+        <td>/Library/Java/JavaVirtualMachines/jdk1.8.0_171.jdk/Contents/Home</td></tr>
+      <tr>
+        <td>Packages</td>
+        <td>{&apos;pytest&apos;: &apos;5.2.2&apos;, &apos;py&apos;: &apos;1.8.0&apos;, &apos;pluggy&apos;: &apos;0.13.0&apos;}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Darwin-19.2.0-x86_64-i386-64bit</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{&apos;xdist&apos;: &apos;1.30.0&apos;, &apos;variables&apos;: &apos;1.9.0&apos;, &apos;html&apos;: &apos;2.0.0&apos;, &apos;base-url&apos;: &apos;1.4.1&apos;, &apos;rerunfailures&apos;: &apos;7.0&apos;, &apos;check&apos;: &apos;0.3.5&apos;, &apos;selenium&apos;: &apos;1.17.0&apos;, &apos;forked&apos;: &apos;1.1.3&apos;, &apos;metadata&apos;: &apos;1.8.0&apos;}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.6.5</td></tr></table>
+    <h2>Summary</h2>
+    <p>16 tests ran in 0:00:00.040188 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p>
+    <input checked="true" class="filter" data-test-result="passed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/>
+    <span class="passed">6 passed</span>, 
+    <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/>
+    <span class="skipped">3 skipped</span>, 
+    <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/>
+    <span class="failed">3 failed</span>, 
+    <input checked="true" class="filter" data-test-result="error" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/>
+    <span class="error">4 errors</span>, 
+    <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/>
+    <span class="xfailed">0 expected failures</span>, 
+    <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/>
+    <span class="xpassed">0 unexpected passes</span>, 
+    <input checked="true" class="filter" data-test-result="rerun" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/>
+    <span class="rerun">0 rerun</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable numeric" col="duration">Duration</th>
+          <th>Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+       
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            __INTELLIJ_COMMAND_HISTFILE__=/Users/apple/Library/Preferences/PyCharm2019.3/terminal/history/history-791<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            HOME=/Users/apple<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            ZDOTDIR=<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            SHELL=/bin/zsh<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            LOGIN_SHELL=1<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            PATH=/usr/local/opt/sqlite/bin:/Users/apple/Documents/flutter/bin:/Library/Java/JavaVirtualMachines/jdk1.8.0_171.jdk/Contents/Home/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/VMware Fusion.app/Contents/Public:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Applications/Wireshark.app/Contents/MacOS:/Library/Frameworks/Python.framework/Versions/3.6/bin:/usr/local/android-sdk-macosx/tools:/usr/local/android-sdk-macosx/platform-tools<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            USER=apple<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            SSH_AUTH_SOCK=/private/tmp/com.apple.launchd.m7Jc7BEA6L/Listeners<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            __CF_USER_TEXT_ENCODING=0x1F5:0x19:0x34<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            JETBRAINS_LICENSE_SERVER=http://fls.jetbrains-agent.com<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            TMPDIR=/var/folders/x2/tmm89ptn3nv43z87p1fxy_zm0000gn/T/<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            LOGNAME=apple<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            XPC_SERVICE_NAME=0<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            LC_CTYPE=zh_CN.UTF-8<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            XPC_FLAGS=0x0<br>
+          <tbody class="
+          skipped
+          
+          results-table-row">
+        <tr>
+          <td class="col-result"></td>
+          <td class="col-name"></td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"><br/></div></td></tr></tbody>
         
-            TERM=xterm-256color<br>
-        
-            TERMINAL_EMULATOR=JetBrains-JediTerm<br>
-        
-            SHLVL=1<br>
-        
-            PWD=/Users/apple/Documents/Projects/Self/PyPi/htmlrunner/tests<br>
-        
-            OLDPWD=/Users/apple/Documents/Projects/Self/PyPi/htmlrunner/tests<br>
-        
-            ZSH=/Users/apple/.oh-my-zsh<br>
-        
-            AUTOJUMP_SOURCED=1<br>
-        
-            AUTOJUMP_ERROR_PATH=/Users/apple/Library/autojump/errors.log<br>
-        
-            PAGER=less<br>
-        
-            LESS=-R<br>
-        
-            LSCOLORS=Gxfxcxdxbxegedabagacad<br>
-        
-            FlASK_CONFIG=development<br>
-        
-            ANDROID_HOME=/usr/local/android-sdk-macosx<br>
-        
-            JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_171.jdk/Contents/Home<br>
-        
-            CLASSPATH=.:/Library/Java/JavaVirtualMachines/jdk1.8.0_171.jdk/Contents/Home/lib/dt.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_171.jdk/Contents/Home/lib/tools.jar<br>
-        
-            PUB_HOSTED_URL=https://pub.flutter-io.cn<br>
-        
-            FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn<br>
-        
-            HOMEBREW_GITHUB_API_TOKEN=2542cc7181cf8ee8ccb6b9269d0441eaf452570c<br>
-        
-            LDFLAGS=-L/usr/local/opt/sqlite/lib<br>
-        
-            CPPFLAGS=-I/usr/local/opt/sqlite/include<br>
-        
-            PKG_CONFIG_PATH=/usr/local/opt/sqlite/lib/pkgconfig<br>
-        
-            LC_ALL=en_US.utf-8<br>
-        
-            LANG=en_US.utf-8<br>
-        
-            SMTP_HOST=smtp.163.com<br>
-        
-            SMTP_USER=ivan-me@163.com<br>
-        
-            SMTP_PWD=hanzhichao123<br>
-        
-            _=/usr/local/bin/python3<br>
-        
-            __PYVENV_LAUNCHER__=/usr/local/bin/python3<br>
-        
-    </div>
-    <table class="table table-sm table-striped table-bordered table-hover">
-        <thead><tr><th>序号</th><th>用例</th><th>总数</th><th>通过</th><th>失败</th><th>出错</th><th>耗时</th><th>操作</th></tr></thead>
-        <tbody>
-        
-            <tr><td colspan="2">demo2.demo22.test_demo22.TestDemo22</td><td>4</td><td>1</td><td>1</td><td>1</td><td>0s</td><td>&nbsp;</td></tr>
-            
-                <tr class="ml-md-3
-                table-warning
-                ">
-                    <td>1</td><td>test_error (demo2.demo22.test_demo22.TestDemo22):None</td>
-                    <td colspan="4">ERROR
-                    </td><td>0</td>
-                    <td><a href="#case_1" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_1 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.937152 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.944884<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    def test_error(self):
-        logging.error('error')
-        open('abc.txt')
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>ERROR:root:error
-</pre><br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>Traceback (most recent call last):
-  File "/Users/apple/Documents/Projects/Self/PyPi/htmlrunner/tests/data/demo2/demo22/test_demo22.py", line 15, in test_error
-    open('abc.txt')
-FileNotFoundError: [Errno 2] No such file or directory: 'abc.txt'
-</pre>
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-danger
-                ">
-                    <td>2</td><td>test_fail (demo2.demo22.test_demo22.TestDemo22):None</td>
-                    <td colspan="4">FAIL
-                    </td><td>0</td>
-                    <td><a href="#case_2" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_2 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.944922 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.945356<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    def test_fail(self):
-        logging.info('fail')
-        assert 0
-</pre><br/>
-                        <br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>Traceback (most recent call last):
-  File "/Users/apple/Documents/Projects/Self/PyPi/htmlrunner/tests/data/demo2/demo22/test_demo22.py", line 11, in test_fail
-    assert 0
-AssertionError
-</pre>
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-secondary
-                ">
-                    <td>3</td><td>test_skip (demo2.demo22.test_demo22.TestDemo22):None</td>
-                    <td colspan="4">SKIPPED
-                    </td><td>0</td>
-                    <td><a href="#case_3" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_3 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.945384 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.945646<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    @unittest.skipIf(True, '原因')
-    def test_skip(self):
-        print('skip')
-</pre><br/>
-                        <br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>原因</pre>
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-success
-                ">
-                    <td>4</td><td>test_success (demo2.demo22.test_demo22.TestDemo22):None</td>
-                    <td colspan="4">PASS
-                    </td><td>0</td>
-                    <td><a href="#case_4" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_4 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.945667 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.945899<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    def test_success(self):
-        print('success')
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>success
-</pre><br/>
-                        
-                    </td>
-                </tr>
-            
-        
-            <tr><td colspan="2">demo2.test_demo2.TestDemo2</td><td>5</td><td>1</td><td>1</td><td>2</td><td>0s</td><td>&nbsp;</td></tr>
-            
-                <tr class="ml-md-3
-                table-warning
-                ">
-                    <td>5</td><td>test_error (demo2.test_demo2.TestDemo2):None</td>
-                    <td colspan="4">ERROR
-                    </td><td>0</td>
-                    <td><a href="#case_5" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_5 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.945971 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.946619<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    def test_error(self):
-        logging.error('error')
-        open('abc.txt')
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>setup
-ERROR:root:error
-teardown
-</pre><br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>Traceback (most recent call last):
-  File "/Users/apple/Documents/Projects/Self/PyPi/htmlrunner/tests/data/demo2/test_demo2.py", line 62, in test_error
-    open('abc.txt')
-FileNotFoundError: [Errno 2] No such file or directory: 'abc.txt'
-</pre>
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-danger
-                ">
-                    <td>6</td><td>test_fail (demo2.test_demo2.TestDemo2):None</td>
-                    <td colspan="4">FAIL
-                    </td><td>0</td>
-                    <td><a href="#case_6" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_6 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.946644 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.947031<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    def test_fail(self):
-        logging.info('fail')
-        assert 0
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>setup
-teardown
-</pre><br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>Traceback (most recent call last):
-  File "/Users/apple/Documents/Projects/Self/PyPi/htmlrunner/tests/data/demo2/test_demo2.py", line 58, in test_fail
-    assert 0
-AssertionError
-</pre>
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-secondary
-                ">
-                    <td>7</td><td>test_skip (demo2.test_demo2.TestDemo2):None</td>
-                    <td colspan="4">SKIPPED
-                    </td><td>0</td>
-                    <td><a href="#case_7" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_7 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.947063 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.947321<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    @unittest.skipIf(True, '原因')
-    def test_skip(self):
-        print('skip')
-</pre><br/>
-                        <br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>原因</pre>
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-success
-                ">
-                    <td>8</td><td>test_success (demo2.test_demo2.TestDemo2):测试成功</td>
-                    <td colspan="4">PASS
-                    </td><td>0</td>
-                    <td><a href="#case_8" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_8 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> ['hello']<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.947343 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.948178<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    def test_success(self):
-        """测试成功"""
-        # print('hello', vars())
-        # print(self.__dict__)
-        # print(self.testMethod)
-        print(self, type(self))
-        self.tags = ['hello']
-        print('hello', self.tags)
-        print('success')
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>setup
-test_success (demo2.test_demo2.TestDemo2) <class 'demo2.test_demo2.TestDemo2'>
-hello ['hello']
-success
-teardown
-</pre><br/>
-                        
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-warning
-                ">
-                    <td>9</td><td>test_timeout (demo2.test_demo2.TestDemo2):测试超时</td>
-                    <td colspan="4">ERROR
-                    </td><td>0</td>
-                    <td><a href="#case_9" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_9 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.948205 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.948726<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    def test_timeout(self):
-        """测试超时"""
-        print('timeout')
-        print(self.tags)
-        time.sleep(3)
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>setup
-timeout
-teardown
-</pre><br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>Traceback (most recent call last):
-  File "/Users/apple/Documents/Projects/Self/PyPi/htmlrunner/tests/data/demo2/test_demo2.py", line 53, in test_timeout
-    print(self.tags)
-AttributeError: 'TestDemo2' object has no attribute 'tags'
-</pre>
-                    </td>
-                </tr>
-            
-        
-            <tr><td colspan="2">test_demo1.TestDemo1</td><td>7</td><td>4</td><td>1</td><td>1</td><td>0s</td><td>&nbsp;</td></tr>
-            
-                <tr class="ml-md-3
-                table-warning
-                ">
-                    <td>10</td><td>test_error (test_demo1.TestDemo1):None</td>
-                    <td colspan="4">ERROR
-                    </td><td>0</td>
-                    <td><a href="#case_10" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_10 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> ['error']<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.948870 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.950095<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    def test_error(self):
-        self.tags = ['error']
-        print('error')
-        logging.error('error')
-        open('abc.txt')
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>error
-ERROR:root:error
-</pre><br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>Traceback (most recent call last):
-  File "/Users/apple/Documents/Projects/Self/PyPi/htmlrunner/tests/data/test_demo1.py", line 24, in test_error
-    open('abc.txt')
-FileNotFoundError: [Errno 2] No such file or directory: 'abc.txt'
-</pre>
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-danger
-                ">
-                    <td>11</td><td>test_fail (test_demo1.TestDemo1):None</td>
-                    <td colspan="4">FAIL
-                    </td><td>0</td>
-                    <td><a href="#case_11" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_11 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.950133 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.950596<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    def test_fail(self):
-        logging.info('fail')
-        print('fail')
-        assert 0
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>fail
-</pre><br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>Traceback (most recent call last):
-  File "/Users/apple/Documents/Projects/Self/PyPi/htmlrunner/tests/data/test_demo1.py", line 18, in test_fail
-    assert 0
-AssertionError
-</pre>
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-secondary
-                ">
-                    <td>12</td><td>test_skip (test_demo1.TestDemo1):None</td>
-                    <td colspan="4">SKIPPED
-                    </td><td>0</td>
-                    <td><a href="#case_12" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_12 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> []<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.950627 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.950884<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    @unittest.skipIf(True, '原因')
-    def test_skip(self):
-        print('skip')
-</pre><br/>
-                        <br/>
-                        <span class="badge badge-secondary">报错信息:</span><pre>原因</pre>
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-success
-                ">
-                    <td>13</td><td>test_success_1_1 (test_demo1.TestDemo1):None</td>
-                    <td colspan="4">PASS
-                    </td><td>0</td>
-                    <td><a href="#case_13" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_13 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> ['success']<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.950907 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.951260<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    @ddt.data(*data)
-    def test_success(self, value):
-        self.tags = ['success']
-        print('success with %s' %value)
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>success with 1
-</pre><br/>
-                        
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-success
-                ">
-                    <td>14</td><td>test_success_2_2 (test_demo1.TestDemo1):None</td>
-                    <td colspan="4">PASS
-                    </td><td>0</td>
-                    <td><a href="#case_14" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_14 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> ['success']<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.951284 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.951628<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    @ddt.data(*data)
-    def test_success(self, value):
-        self.tags = ['success']
-        print('success with %s' %value)
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>success with 2
-</pre><br/>
-                        
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-success
-                ">
-                    <td>15</td><td>test_success_3_3 (test_demo1.TestDemo1):None</td>
-                    <td colspan="4">PASS
-                    </td><td>0</td>
-                    <td><a href="#case_15" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_15 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> ['success']<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.951651 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.952010<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    @ddt.data(*data)
-    def test_success(self, value):
-        self.tags = ['success']
-        print('success with %s' %value)
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>success with 3
-</pre><br/>
-                        
-                    </td>
-                </tr>
-            
-                <tr class="ml-md-3
-                table-success
-                ">
-                    <td>16</td><td>test_success_4_4 (test_demo1.TestDemo1):None</td>
-                    <td colspan="4">PASS
-                    </td><td>0</td>
-                    <td><a href="#case_16" data-toggle="collapse">Detail</a></td>
-                </tr>
-                <tr id=case_16 class="collapse">
-                    <td colspan="8">
-                        <span class="badge badge-secondary">标签</span> ['success']<br/>
-                        <span class="badge badge-secondary">等级</span> 2<br/>
-                        <span class="badge badge-secondary">开始时间</span> 2020-04-13 19:14:11.952035 <br/>
-                        <span class="badge badge-secondary">结束时间</span> 2020-04-13 19:14:11.952383<br/>
-                        <span class="badge badge-secondary">代码</span> <pre>    @ddt.data(*data)
-    def test_success(self, value):
-        self.tags = ['success']
-        print('success with %s' %value)
-</pre><br/>
-                        <span class="badge badge-secondary">输出: </span><pre>success with 4
-</pre><br/>
-                        
-                    </td>
-                </tr>
-            
-        
-        </tbody>
-    </table>
-</div>
-</body>
-</html>
+</table></body></html>
