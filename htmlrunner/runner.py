@@ -12,7 +12,7 @@ from htmlrunner.loader import flatten_suite, group_suites_by_class
 from htmlrunner.result import Result
 from htmlrunner.exceptions import set_timeout
 
-BASEDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASEDIR = os.path.dirname(os.path.abspath(__file__))
 
 
 DEFAULT_REPORT_FILE = 'report.html'
