@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>测试报告</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="pt-4">测试报告</h1>
+            <h6>测试报告描述</h6>
+            <h6>执行人: Hzc</h6>
+            <h6>概要: 总数: 3 执行数: 3 通过: 3 失败: 0 出错: 0 跳过: 0</h6>
+            <h6 class="pb-2">开始时间: 2020-07-09 17:43:58.083840 </h6>
+            <h6>结束时间: 2020-07-09 17:43:58.089929 </h6>
+            <h6>耗时: 0:00:00.006089s</h6>
+            <h6>平台: Darwin-19.5.0-x86_64-i386-64bit 操作系统 Darwin Python版本: 3.7.7 <a href="#env_info" data-toggle="collapse">环境变量</a></h6>
+        </div>
+        <div class="col-md-4">
+            <div id="chart" style="width: 400px;height:400px;"></div>
+            <script type="text/javascript">
+                var myChart = echarts.init(document.getElementById('chart'));
+                myChart.setOption({
+                    series : [
+                        {
+                            name: '执行统计',
+                            type: 'pie',    // 设置图表类型为饼图
+                            radius: '55%',  // 饼图的半径，外半径为可视区尺寸（容器高宽中较小一项）的 55% 长度。
+                            color: ['#28a745', '#dc3545', '#ffc107', '#6c757d'],
+                            data:[          // 数据数组，name 为数据项名称，value 为数据项值
+                                {value:3, name:'通过'},
+                                {value:0 , name:'失败'},
+                                {value:0 , name:'出错'},
+                                {value:0, name:'跳过'},
+                            ]
+                        }
+                    ]
+                })
+            </script>
+        </div>
+    </div>
+
+    <div id="env_info" class="collapse text-sm-left">
+        
+            PATH=/Users/superhin/项目/htmlrunner/venv/bin:/usr/local/opt/openjdk/bin:/usr/local/Cellar/mongodb-community/4.2.7/bin:/usr/local/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin}<br>
+        
+            SMTP_USER=rpa@secoo.com<br>
+        
+            PS1=(venv) <br>
+        
+            RUNNING_NODE=185<br>
+        
+            AUTOJUMP_SOURCED=1<br>
+        
+            VERSIONER_PYTHON_VERSION=2.7<br>
+        
+            SMTP_PWD=Youxiang_00137<br>
+        
+            LOGNAME=superhin<br>
+        
+            XPC_SERVICE_NAME=com.jetbrains.pycharm.193500<br>
+        
+            PWD=/Users/superhin/项目/htmlrunner/tests<br>
+        
+            PYCHARM_HOSTED=1<br>
+        
+            PYTHONPATH=/Users/superhin/项目/htmlrunner<br>
+        
+            SHELL=/bin/zsh<br>
+        
+            PYTHONIOENCODING=UTF-8<br>
+        
+            HOMEBREW_BOTTLE_DOMAIN=https://mirrors.ustc.edu.cn/homebrew-bottles<br>
+        
+            OLDPWD=/<br>
+        
+            USER=superhin<br>
+        
+            PYCURL_SSL_LIBRARY=nss<br>
+        
+            TMPDIR=/var/folders/jh/jblt4q5j3bq4dkjj92wrjtvh0000gp/T/<br>
+        
+            SSH_AUTH_SOCK=/private/tmp/com.apple.launchd.X915hkYZ5l/Listeners<br>
+        
+            VIRTUAL_ENV=/Users/superhin/项目/htmlrunner/venv<br>
+        
+            XPC_FLAGS=0x0<br>
+        
+            PYTHONUNBUFFERED=1<br>
+        
+            __CF_USER_TEXT_ENCODING=0x1F6:0x19:0x34<br>
+        
+            LC_CTYPE=zh_CN.UTF-8<br>
+        
+            HOME=/Users/superhin<br>
+        
+            AUTOJUMP_ERROR_PATH=/Users/superhin/Library/autojump/errors.log<br>
+        
+            __PYVENV_LAUNCHER__=/Users/superhin/项目/htmlrunner/venv/bin/python<br>
+        
+    </div>
+
+    <table class="table table-sm table-striped table-bordered">
+        <thead><tr><th>序号</th><th>用例</th><th>总数</th><th>通过</th><th>失败</th><th>出错</th><th>耗时</th><th>操作</th></tr></thead>
+        <tbody>
+        
+            <tr><td colspan="2">TestA</td><td>3</td><td>3</td><td>0</td><td>0</td><td>0s</td><td>&nbsp;</td></tr>
+            
+                <tr class="ml-md-3
+                table-success
+                ">
+                    <td>1</td><td>test_a (__main__.test_with_images.<locals>.TestA):order:2</td>
+                    <td colspan="4">PASS
+                    </td><td>0</td>
+                    <td><a href="#case_1" data-toggle="collapse">Detail</a></td>
+                </tr>
+                <tr id=case_1 class="collapse bg-white">
+                    <td colspan="8">
+                        <span class="badge badge-secondary">标签</span> []<br/>
+                        <span class="badge badge-secondary">等级</span> -1<br/>
+                        <span class="badge badge-secondary">开始时间</span> 2020-07-09 17:43:58.084110 <br/>
+                        <span class="badge badge-secondary">结束时间</span> 2020-07-09 17:43:58.088013<br/>
+                        <span class="badge badge-secondary">代码</span> <pre class="bg-light"><code>        def test_a(self):
+            """order:2"""
+            pass
+</code></pre>
+                        
+                        
+                        <br/>
+                        <span class="badge badge-secondary">代码</span><br/>
+                        
+
+                    </td>
+                </tr>
+            
+                <tr class="ml-md-3
+                table-success
+                ">
+                    <td>2</td><td>test_b (__main__.test_with_images.<locals>.TestA):None</td>
+                    <td colspan="4">PASS
+                    </td><td>0</td>
+                    <td><a href="#case_2" data-toggle="collapse">Detail</a></td>
+                </tr>
+                <tr id=case_2 class="collapse bg-white">
+                    <td colspan="8">
+                        <span class="badge badge-secondary">标签</span> []<br/>
+                        <span class="badge badge-secondary">等级</span> -1<br/>
+                        <span class="badge badge-secondary">开始时间</span> 2020-07-09 17:43:58.088142 <br/>
+                        <span class="badge badge-secondary">结束时间</span> 2020-07-09 17:43:58.089481<br/>
+                        <span class="badge badge-secondary">代码</span> <pre class="bg-light"><code>        def test_b(self):
+            self.images = ['/Users/superhin/Downloads/beida.jpeg']
+            pass
+</code></pre>
+                        
+                        
+                        <br/>
+                        <span class="badge badge-secondary">代码</span><br/>
+                        
+                        <div><img src="images/beida.jpeg"></img></div>
+                        
+
+                    </td>
+                </tr>
+            
+                <tr class="ml-md-3
+                table-success
+                ">
+                    <td>3</td><td>test_c (__main__.test_with_images.<locals>.TestA):order:1</td>
+                    <td colspan="4">PASS
+                    </td><td>0</td>
+                    <td><a href="#case_3" data-toggle="collapse">Detail</a></td>
+                </tr>
+                <tr id=case_3 class="collapse bg-white">
+                    <td colspan="8">
+                        <span class="badge badge-secondary">标签</span> []<br/>
+                        <span class="badge badge-secondary">等级</span> -1<br/>
+                        <span class="badge badge-secondary">开始时间</span> 2020-07-09 17:43:58.089643 <br/>
+                        <span class="badge badge-secondary">结束时间</span> 2020-07-09 17:43:58.089866<br/>
+                        <span class="badge badge-secondary">代码</span> <pre class="bg-light"><code>        def test_c(self):
+            """order:1"""
+            pass
+</code></pre>
+                        
+                        
+                        <br/>
+                        <span class="badge badge-secondary">代码</span><br/>
+                        
+
+                    </td>
+                </tr>
+            
+        
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

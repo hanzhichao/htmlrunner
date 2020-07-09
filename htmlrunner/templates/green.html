@@ -1,100 +1,116 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>全部品牌接口监控测试报告</title>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
     <meta name="generator" content="HTMLTestRunner 0.8.2"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css">
 	<script src="http://cdn.bootcss.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
-    
-<style type="text/css" media="screen">
-body        { font-family: verdana, arial, helvetica, sans-serif; font-size: 80%; }
-table       { font-size: 100%; }
-pre         { }
+    <style type="text/css" media="screen">
+        body        { font-family: verdana, arial, helvetica, sans-serif; font-size: 80%; margin-left: 20px; }
+        table       { font-size: 100%; }
+        pre         { }
 
-/* -- heading ---------------------------------------------------------------------- */
-h1 {
-	font-size: 16pt;
-	color: gray;
-}
-.heading {
-    margin-top: 0ex;
-    margin-bottom: 1ex;
-}
+        /* -- heading ---------------------------------------------------------------------- */
+        h1 {
+            font-size: 16pt;
+            color: gray;
+        }
+        .heading {
+            margin-top: 0;
+            margin-bottom: 1px;
+        }
 
-.heading .attribute {
-    margin-top: 1ex;
-    margin-bottom: 0;
-}
+        .heading .attribute {
+            margin-top: 1px;
+            margin-bottom: 0;
+        }
 
-.heading .description {
-    margin-top: 4ex;
-    margin-bottom: 6ex;
-}
+        .heading .description {
+            margin-top: 4px;
+            margin-bottom: 6px;
+        }
 
-/* -- css div popup ------------------------------------------------------------------------ */
-a.popup_link {
-}
+        /* -- css div popup ------------------------------------------------------------------------ */
+        a.popup_link {
+        }
 
-a.popup_link:hover {
-    color: red;
-}
+        a.popup_link:hover {
+            color: red;
+        }
 
-.popup_window {
-    display: none;
-    position: relative;
-    left: 0;
-    top: 0;
-    /*border: solid #627173 1px; */
-    padding: 10px;
-    background-color: #E6E6D6;
-    font-family: "Lucida Console", "Courier New", Courier, monospace;
-    text-align: left;
-    font-size: 8pt;
-    width: 500px;
-}
+        .popup_window {
+            display: none;
+            position: relative;
+            left: 0;
+            top: 0;
+            /*border: solid #627173 1px; */
+            padding: 10px;
+            {#background-color: #f6f6f6;#}
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            text-align: left;
+            font-size: 8pt;
+            width: 100%;
+        }
 
-}
-/* -- report ------------------------------------------------------------------------ */
-#show_detail_line {
-    margin-top: 3ex;
-    margin-bottom: 1ex;
-}
-#result_table {
-    width: 80%;
-    border-collapse: collapse;
-    border: 1px solid #777;
-}
-#header_row {
-    font-weight: bold;
-    color: white;
-    background-color: #777;
-}
-#result_table td {
-    border: 1px solid #777;
-    padding: 2px;
-}
-#total_row  { font-weight: bold; }
-.passClass  { background-color: #6c6; }
-.failClass  { background-color: #c60; }
-.errorClass { background-color: #c00; }
-.passCase   { color: #6c6; }
-.failCase   { color: #c60; font-weight: bold; }
-.errorCase  { color: #c00; font-weight: bold; }
-.hiddenRow  { display: none; }
-.testcase   { margin-left: 2em; }
+        .output {
+            background-color: #eeeeee;
+            color: #333;
+            font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+            font-size: 10px;
+            padding: 10px;
+            border-radius:1px;
+            border: 1px solid #eee;
+        }
+
+        pre {
+            margin-top: 10px;
+            font-size: 10px;
+            background-color: #eeeeee;
+            padding: 10px;
+            border-radius:1px;
+            border: 1px solid #eee;
+        }
+
+        /* -- report ------------------------------------------------------------------------ */
+        #show_detail_line {
+            margin-top: 3px;
+            margin-bottom: 1px;
+        }
+        #result_table {
+            width: 80%;
+            border-collapse: collapse;
+            border: 1px solid #777;
+        }
+        #header_row {
+            font-weight: bold;
+            color: white;
+            background-color: #777;
+        }
+        #result_table td {
+            border: 1px solid #777;
+            padding: 2px;
+        }
+        #total_row  { font-weight: bold; }
+        .passClass  { background-color: #6c6; }
+        .failClass  { background-color: #c60; }
+        .errorClass { background-color: #c00; }
+        .passCase   { color: #6c6; }
+        .failCase   { color: #c60; font-weight: bold; }
+        .errorCase  { color: #c00; font-weight: bold; }
+        .hiddenRow  { display: none; }
+        .testcase   { margin-left: 2em; }
 
 
-/* -- ending ---------------------------------------------------------------------- */
-#ending {
-}
+        /* -- ending ---------------------------------------------------------------------- */
+        #ending {
+        }
 
-</style>
-
+    </style>
 </head>
 <body>
-<script language="javascript" type="text/javascript"><!--
+    <script language="javascript" type="text/javascript"><!--
 output_list = Array();
 
 /* level - 0:Summary; 1:Failed; 2:All */
@@ -176,38 +192,39 @@ function html_escape(s) {
 
     <div class='heading'>
         <h1>{{title}}</h1>
-        <p class='attribute'><strong>开始时间:</strong>  {{start_at}}</p>
-        <p class='attribute'><strong>执行时间:</strong> {{duration}}</p>
+        <p class='attribute'><strong>开始时间:</strong>  {{start_at}} </p>
+        <p class='attribute'><strong>执行时间:</strong> {{duration}} </p>
         <p class='attribute'><strong>执行结果:</strong> 总数: {{total}} 执行数: {{run_num}} 通过: {{pass_num}} 失败: {{fail_num}} 出错: {{error_num}} 跳过: {{skipped_num}}</p>
-        <p class='description'>用例执行情况：</p>
-        {% if description %}<p>{{description}}</p>{% endif %}
+        {% if description %}<p class='description'>{{description}}</p>{% endif %}
     </div>
-
-    <p id='show_detail_line'>Show
-    <a href='javascript:showCase(0)' class="btn btn-xs btn-primary">Summary</a>
-    <a href='javascript:showCase(1)' class="btn btn-xs btn-danger">Failed</a>
-    <a href='javascript:showCase(2)' class="btn btn-xs btn-info">All</a>
+    <h5>用例执行情况</h5>
+    <p id='show_detail_line'>
+        <a href='javascript:showCase(0)' class="btn btn-xs btn-primary">概要</a>
+        <a href='javascript:showCase(1)' class="btn btn-xs btn-danger">失败</a>
+        <a href='javascript:showCase(2)' class="btn btn-xs btn-info">全部</a>
     </p>
 
-    <table id='result_table'>
+    <table id='result_table' style="margin-top: 10px;">
         <colgroup><col align='left' /><col align='right' /><col align='right' /><col align='right' /><col align='right' /><col align='right' /></colgroup>
-        <tr id='header_row'><td>Test Group/Test case</td> <td>Count</td><td>Pass</td><td>Fail</td><td>Error</td><td>View</td></tr>
+        <tr id='header_row'><td width="25%">测试套件/测试用例</td> <td>总数</td><td>通过</td><td>失败</td><td>出错</td><td>查看</td></tr>
 
         {% for test_class in test_classes %}
         {% set out_loop = loop %}
-        <tr class='passClass'><td>{{test_class.name}}</td><td>{{test_class.total}}</td><td>{{test_class.pass_num}}</td><td>{{test_class.fail_num}}</td><td>{{test_class.error_num}}</td><td><a href="javascript:showClassDetail('c{{ out_loop.index }}',1)">Detail</a></td></tr>
+        <tr class='passClass'><td>{{test_class.name}}</td><td>{{test_class.total}}</td><td>{{test_class.pass_num}}</td><td>{{test_class.fail_num}}</td><td>{{test_class.error_num}}</td><td><a href="javascript:showClassDetail('c{{ out_loop.index }}',1)">详情</a></td></tr>
         {% for test in test_class.test_cases %}
         <tr id='pt{{ out_loop.index }}.{{ loop.index }}' class='hiddenRow'>
         <td class='none'><div class='testcase'>{{test.full_name}}: {{ test.doc }}</div></td><td colspan='5' align='center'><a class="popup_link" onfocus='this.blur();' href="javascript:showTestDetail('div_pt{{ out_loop.index }}.{{ loop.index }}')" >{{test.status}}</a>
-            <div id='div_pt{{ out_loop.index }}.{{ loop.index }}' class="popup_window"><div style='text-align: right; color:red;cursor:pointer'>
-                <a onfocus='this.blur();' onclick="document.getElementById('div_pt{{ out_loop.index }}.{{ loop.index }}').style.display = 'none' " >
-                   [x]</a>
-                </div>
-               <div>{% if test.output %}<br/>{{test.output}}{% endif %}{% if test.exec_info %}<br/>{{test.exec_info}}</td>{% endif %}</div></div></td>
+            <div id='div_pt{{ out_loop.index }}.{{ loop.index }}' class="popup_window">
+               <div>
+                   {% if test.output %}<div class="output">{{test.output}}</div>{% endif %}
+                   {% if test.exec_info %}<pre>{{test.exec_info}}</pre>{% endif %}
+               </div>
+            </div>
+        </td>
         </tr>
         {% endfor %}
         {% endfor %}
-        <tr id='total_row'><td>Total</td><td>1</td><td class="text text-success">{{pass_num}}</td><td class="text text-danger">{{fail_num}}</td><td class="text text-warning">{{error_num}}</td><td>&nbsp;</td></tr>
+        <tr id='total_row'><td>总数</td><td>1</td><td class="text text-success">{{pass_num}}</td><td class="text text-danger">{{fail_num}}</td><td class="text text-warning">{{error_num}}</td><td>&nbsp;</td></tr>
 
         </table>
 

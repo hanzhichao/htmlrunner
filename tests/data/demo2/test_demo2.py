@@ -44,13 +44,13 @@ class TestDemo2(unittest.TestCase):
         # print(self.testMethod)
         print(self, type(self))
         self.tags = ['hello']
+        self.images = ['/Users/superhin/Downloads/beida.jpeg']
         print('hello', self.tags)
         print('success')
 
     def test_timeout(self):
         """测试超时"""
         print('timeout')
-        print(self.tags)
         time.sleep(3)
 
     def test_fail(self):

@@ -1,15 +1,20 @@
 import sys
 import io
+import os
 import unittest
 from datetime import datetime
 from collections import defaultdict
 from itertools import groupby
 import inspect
 import importlib
+import base64
 
 from logz import log
 
-from htmlrunner.loader import flatten_suite
+from htmlrunner.utils import flatten_suite, get_case_tags, get_case_level, get_case_order, get_case_images
+
+OUTPUT_DIR = '.'
+IMAGE_DIR = 'images'
 
 
 class OutputRedirector(object):
@@ -25,12 +30,13 @@ class OutputRedirector(object):
     def flush(self):
         self.fp.flush()
 
+
 stdout_redirector = OutputRedirector(sys.stdout)
 stderr_redirector = OutputRedirector(sys.stderr)
 
 
 class Result(unittest.TestResult):
-    def __init__(self, verbosity=1):
+    def __init__(self, verbosity=2):
         super().__init__(verbosity=verbosity)
         self.verbosity = verbosity
         self.timeouts = []
@@ -41,6 +47,9 @@ class Result(unittest.TestResult):
         self.sn = 1
         self.stdout_bak = None
         self.stderr_bak = None
+
+    def _exc_info_to_string(self, err, test):
+        return super()._exc_info_to_string(err, test)
 
     def capture_output(self):
         # 重定向sys.out和sys.err
@@ -69,7 +78,7 @@ class Result(unittest.TestResult):
         self.result[test.id()]['end_at'] = test.end_at = datetime.now()
         self.complete_output()
 
-    def update_test(self, test, status, exec_info='', setup_status=None, teardown_status=None, error_code=None):
+    def update_test(self, test, status, exec_info='', setup_status=None, teardown_status=None, error_code=None):  # todo
         output = self.complete_output()
         sys.stdout.write(output)
         last_output = self.result[test.id()].get(output, '')
@@ -81,10 +90,24 @@ class Result(unittest.TestResult):
             }
         )
 
-    def register(self, test, status, exec_info='', setup_status=None, teardown_status=None, error_code=None):
+    def save_images(self, imgs):  # todo try  base64 from url
+        new_imgs = []
+        for img in imgs:
+            file_name = os.path.basename(img)
+            if not os.path.exists('images'):
+                os.makedirs('images')
+            image_file = os.path.join('images', file_name)
+            new_imgs.append(image_file)
+            fin = open(img, 'rb')
+            fout = open(image_file, 'wb')
+            fout.write(fin.read())
+            fin.close()
+            fout.close()
+        return new_imgs
+
+    def register(self, test, status, exec_info='', setup_status=None, teardown_status=None, error_code=None):   # todo
         test.output = output = self.complete_output()
         sys.stdout.write(output)
-
         test_module_name = test.__module__
         test_class_name = test.__class__.__name__
         test_class_doc = test.__class__.__doc__
@@ -98,8 +121,10 @@ class Result(unittest.TestResult):
 
         test_method = getattr(test.__class__, test_method_name)  # TODO  模块中代码块的失败
 
-        tags, = getattr(test, 'tags') if hasattr(test, 'tags') else [],
-        level = test.level if hasattr(test, 'level') else 2
+        tags = get_case_tags(test)
+        level = get_case_level(test)
+        images = get_case_images(test)
+        images = self.save_images(images)
 
         start_at = test.start_at if hasattr(test, 'start_at') else None
         end_at = test.end_at if hasattr(test, 'end_at') else None  # 注册时未结束无end_at
@@ -113,7 +138,7 @@ class Result(unittest.TestResult):
             code = ''
 
         if test.id() not in self.result:
-            item = dict(obj=test,
+            item = dict(obj=test,   # todo 添加为test属性
                         sn=self.sn,
                         name=test_method_name,
                         full_name=str(test),
@@ -132,7 +157,8 @@ class Result(unittest.TestResult):
                         exec_info=exec_info,
                         output=output,
                         tags=tags,
-                        level=level
+                        level=level,
+                        images=images
                         )
             self.result[test.id()] = item
             self.sn += 1
@@ -159,9 +185,10 @@ class Result(unittest.TestResult):
                 xpass_num=len(list(filter(lambda x: x['status' ]=="XPASS", test_cases)))
             )
         test_classes = list(data.values())
+
         return test_classes
 
-    def addTimeout(self, err, test):
+    def addTimeout(self, err, test):  # todo remove
         self.timeouts.append(test)
 
     def handle_load_error(self, test, err):
@@ -170,14 +197,13 @@ class Result(unittest.TestResult):
 
         path = function_name
         module = importlib.import_module(path)
-        function = None
         tests = unittest.defaultTestLoader.loadTestsFromModule(module)
 
         if tests:
             tests = flatten_suite(tests)
             for unrun_test in tests:
                 exec_info = self._exc_info_to_string(err, test)
-                self.errors.append((unrun_test, ))
+                self.errors.append((unrun_test, exec_info))
                 self.register(unrun_test, 'LOAD_ERRROR', '')
 
     def handel_module_setup_teardown_error(self, test, err):

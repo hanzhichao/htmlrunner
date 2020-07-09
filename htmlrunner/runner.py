@@ -2,31 +2,37 @@ import platform
 from datetime import datetime
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
-from unittest.suite import _isnotsuite
+import unittest
+import threading
+
+from collections import defaultdict
 
 from logz import log
 from jinja2 import Template
 
-from htmlrunner.loader import flatten_suite, group_suites_by_class
 from htmlrunner.result import Result
-from htmlrunner.exceptions import set_timeout
+from htmlrunner.loader import Loader
+from htmlrunner.utils import isnotsuite, group_test_by_class
+
 
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 
 
 DEFAULT_REPORT_FILE = 'report.html'
+
 DEFAULT_LOG_FILE = 'run.log'
+
 DEFAULT_REPORT_TITLE = 'TEST REPORT BY HTMLRUNNER'
-DEFAULT_TEMPLATE = 'all'
+
+DEFAULT_TEMPLATE = 'default'
 
 
-def run_suite_after(suite, result):
+def run_suite_after(suite, result):  # todo
     suite._tearDownPreviousClass(None, result)
     suite._handleModuleTearDown(result)
 
 
-def run_suite_before_case(suite, case, result):
+def run_suite_before_case(suite, case, result):  # todo
     suite._tearDownPreviousClass(case, result)
     suite._handleModuleFixture(case, result)
     suite._handleClassSetUp(case, result)
@@ -37,41 +43,61 @@ def run_suite_before_case(suite, case, result):
 
 
 class Runner(object):
-    def __init__(self, threads=None, timeout=None, by_class=False, **kwargs):
+    def __init__(self,
+                 threads=None,
+                 timeout=None,
+                 interval=None,
+                 failfast=False,
+                 ensure_sequence=True,
+                 check_all=False,
+                 **kwargs):
         self.threads = threads
-        self.timeout = timeout
-        self.by_class = by_class
+        self.interval = interval
+        self.reruns = False  # todo
+        self.timeout = timeout   # 每个用例的执行时间
+        self.failfast = failfast
         self.kwargs = kwargs
+        self.ensure_sequence = ensure_sequence  # 确保运行顺序
+        self.check_all = check_all  # todo
 
-    def collect_only(self, suite):
-        t0 = time.time()
-        i = 0
-        suite = flatten_suite(suite)
-        print("Collect {} tests is {:.3f}s".format(suite.countTestCases(), time.time() - t0))
-        print("-" * 50)
-        for case in suite:
-            if _isnotsuite(case):
-                i += 1
-                print("{}.{}".format(i, str(case)))
-        print("-" * 50)
+    def run_with_threads(self, case, result):
+        assert self.threads and isinstance(self.threads, int) and self.threads > 0
+        if self.timeout:
+            assert isinstance(self.timeout, (float, int)) and self.timeout > 0
 
-    def run_suite(self, suite, result, run_func=None, interval=None):
-        """基础运行suite方法,支持指定运行方法"""
+        threads = []
+        for i in range(self.threads):
+            threads.append(threading.Thread(target=case, args=(result,)))
+
+        [t.start() for t in threads]
+
+        [t.join(timeout=self.timeout) for t in threads]
+
+    def run_test(self, test, result):
+        """执行单个测试"""
+        if self.threads and isinstance(self.threads, int):
+            print(self.threads, self.timeout)
+            self.run_with_threads(test, result)
+        else:
+            test(result)
+        interval = self.interval
+        print('interval', interval)
+        if interval and isinstance(interval, (int, float)):
+            time.sleep(interval)
+
+    def run_suite(self, suite, result):
+        """基础运行suite方法"""
         log.info('执行测试套件:', suite)
         topLevel = False
         if getattr(result, '_testRunEntered', False) is False:
             result._testRunEntered = topLevel = True
 
         for index, test in enumerate(suite):
-            if _isnotsuite(test):
+            if isnotsuite(test):
                 setup_ok = run_suite_before_case(suite, test, result)
                 if not setup_ok:
                     continue
-            log.info('执行用例:', test.id())
-            run_func(test, result) if run_func else test(result)  # 可能是suite 可能有异常
-            log.info('执行结果:', test.status, '执行时间:', test.duration)
-            time.sleep(interval) if interval else None
-
+            self.run_test(test, result)
             if suite._cleanup:
                 suite._removeTestAtIndex(index)
 
@@ -81,38 +107,12 @@ class Runner(object):
 
         return result
 
-    # def run_suite_by_class(self, suite, result, run_func=None, interval=None):
-    #     suite_list = group_suites_by_class(suite)
-    #     for suite in suite_list:
-    #         self.run_suite(suite, result, run_func=run_func, interval=interval)
-
-    # def run_suite_in_thread_poll(self, suite, result, threads, interval=None):
-    #     poll = ThreadPoolExecutor(max_workers=threads)
-    #     self.run_suite(suite, result,
-    #                    run_func=lambda case, result: poll.submit(case, result),
-    #                    interval=interval)
-
-    # def run_with_timeout(self, test, result, timeout):
-    #     print(test, result, timeout)
-    #     set_timeout(timeout, result.addTimeout)(test)(result)
-
     def run(self, suite, callback=None, interval=None):
         result = Result()
-        run_func = None
-        suite_list = [suite]
-        if self.by_class:  # 按类重组suite
-            suite_list = group_suites_by_class(suite)
-
-        if self.timeout:
-            set_timeout(self.timeout, result.addTimeout)(suite)(result)  # timeout加在最外层的suite上  # FIXME
-
-        if self.threads:
-            poll = ThreadPoolExecutor(max_workers=self.threads)
-            run_func = lambda case, result: poll.submit(case, result)
+        result.failfast = self.failfast is True
 
         result.start_at = datetime.now()
-        for suite in suite_list:
-            self.run_suite(suite, result, run_func=run_func, interval=interval)
+        self.run_suite(suite, result)
         result.end_at = datetime.now()
         if callback:
             callback(result)
@@ -123,8 +123,13 @@ class HTMLRunner(Runner):
     def __init__(self, report_file=None, log_file=None,  # 报告文件, 日志文件, 自动创建路径
                  title=None, description=None, tester=None,   # 报告内容
                  template=None, lang=None,  # 模板及语言
-                 threads=None, timeout=None, by_class=True,  # 运行选项
+                 verbosity=2, failfast=False,
+                 threads=None, timeout=None,  # 运行选项
+                 interval=None,
                  **kwargs):  # 额外信息
+        self.verbosity = verbosity
+        self.failfast = failfast
+        self.interval=interval
         self.report_file = datetime.now().strftime(report_file or DEFAULT_REPORT_FILE)
         self.log_file = log.file = datetime.now().strftime(log_file or DEFAULT_LOG_FILE)
 
@@ -133,8 +138,7 @@ class HTMLRunner(Runner):
         self.tester = tester
         self.template = template or DEFAULT_TEMPLATE
         self.kwargs = kwargs
-        super().__init__(threads, timeout, by_class)
-
+        super().__init__(threads, timeout, interval)
 
     def generate_report(self, result):
         template_path = os.path.join(BASEDIR, 'templates', '%s.html' % self.template)
@@ -185,7 +189,7 @@ class HTMLRunner(Runner):
         with open(self.report_file, "w") as f:
             f.write(content)
 
-    def run(self, suite, callback=None, interval=None):
+    def run(self, suite, callback=None, interval=None, debug=False):
         result = super().run(suite, callback=self.generate_report, interval=interval)
         return result
 
