@@ -93,7 +93,7 @@ class Result(unittest.TestResult):
             sys.stderr = self.stderr_bak
             self.stdout_bak = None
             self.stderr_bak = None
-        return self.output.getvalue().strip()
+        return self.output.getvalue()
 
     def startTest(self, test):
         self.capture_output()
@@ -164,8 +164,8 @@ class Result(unittest.TestResult):
                  setup_status=None, teardown_status=None, error_code=None):   # todo
         test.output = output = self.complete_output()
         # sys.stdout.write(output)
-        if output:
-            log.info(output)
+        if output.strip():
+            log.info(output.strip())
         test_module_name = test.__module__
         test_class_name = test.__class__.__name__
         test_class_doc = test.__class__.__doc__

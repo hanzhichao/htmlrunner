@@ -33,6 +33,7 @@ class Loader(object):  # suite factory
     @property
     def osuite(self):
         """按order整理顺序"""
+
         return unittest.TestSuite(
                 [unittest.TestSuite(
                     sorted(suite, key=lambda case: get_case_order(case))

@@ -62,7 +62,7 @@ class Runner(object):
         self.ensure_sequence = ensure_sequence  # 确保运行顺序
         self.check_all = check_all  # todo
 
-    def run_with_threads(self, case, result):
+    def run_with_threads(self, case, result):  # case有可能是suite
         assert self.threads and isinstance(self.threads, int) and self.threads > 0
         if self.timeout:
             assert isinstance(self.timeout, (float, int)) and self.timeout > 0
@@ -81,6 +81,7 @@ class Runner(object):
             self.run_with_threads(test, result)
         else:
             test(result)
+
         interval = self.interval
         if interval and isinstance(interval, (int, float)):
             time.sleep(interval)
@@ -108,6 +109,8 @@ class Runner(object):
         return result
 
     def run(self, suite, callback=None, interval=None):
+        suite = Loader(suite=suite).osuite  # 按类组织并排序  # todo
+
         result = Result(output_dir=self.output_dir)
         result.failfast = self.failfast is True
 
@@ -142,7 +145,6 @@ class HTMLRunner(Runner):
         super().__init__(threads, timeout, interval, output_dir=output_dir)
         self._handle_output_dir()
 
-
     def _handle_output_dir(self):
         self.report_file = datetime.now().strftime(self._report_file or DEFAULT_REPORT_FILE)
         self.log_file = datetime.now().strftime(self._log_file or DEFAULT_LOG_FILE)
@@ -154,9 +156,8 @@ class HTMLRunner(Runner):
             self.log_file = os.path.join(self.output_dir, self.log_file)
         log.file = self.log_file
 
-
-
     def _get_context(self, result):
+        """组装上下文信息"""
         test_classes = result.sortByClass()
         # 报告配置信息
         report_config_info = {

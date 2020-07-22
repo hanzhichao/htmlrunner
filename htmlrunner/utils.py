@@ -45,7 +45,7 @@ def group_test_by_class(suite: unittest.TestSuite) -> unittest.TestSuite:
 
 
 def get_case_tags(case) -> list:
-    case_tags = []
+    case_tags = None
     case_doc = case._testMethodDoc
     if case_doc and 'tag' in case_doc:
         pattern = re.compile(TAG_PARTTEN)
@@ -55,7 +55,7 @@ def get_case_tags(case) -> list:
 
 def get_case_level(case):
     case_doc = case._testMethodDoc
-    case_level = -1  # todo 默认level
+    case_level = None  # todo 默认level
     if case_doc:
         pattern = re.compile(LEVEL_PARTTEN)
         levels = re.findall(pattern, case_doc)
@@ -68,9 +68,9 @@ def get_case_level(case):
     return case_level
 
 
-def get_case_order(case):
+def get_case_order(case, default=100):
     case_doc = case._testMethodDoc
-    case_order = 100  # todo
+    case_order = default # todo
     if case_doc:
         pattern = re.compile(ORDER_PARTTEN)
         orders = re.findall(pattern, case_doc)
