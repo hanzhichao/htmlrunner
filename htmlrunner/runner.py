@@ -1,8 +1,9 @@
 import platform
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import os
 import time
 import unittest
+import json
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -42,6 +43,18 @@ def run_suite_before_case(suite, case, result):  # todo
         return False
     return True
 
+class MyJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, bytes):
+            return obj.decode('utf-8')
+        if isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        if isinstance(obj, date):
+            return obj.strftime('%Y-%m-%d')
+        if isinstance(obj, timedelta):
+            return obj.seconds
+
+        return json.JSONEncoder.default(self, obj)
 
 class Runner(object):
     def __init__(self,
@@ -157,14 +170,16 @@ class HTMLRunner(Runner):
         self._handle_output_dir()
 
     def _handle_output_dir(self):
-        self.report_file = datetime.now().strftime(self._report_file or DEFAULT_REPORT_FILE)
-        self.log_file = datetime.now().strftime(self._log_file or DEFAULT_LOG_FILE)
+        now = datetime.now()
+        self.report_file = now.strftime(self._report_file or DEFAULT_REPORT_FILE)
+        self.log_file = now.strftime(self._log_file or DEFAULT_LOG_FILE)
 
         if self.output_dir:
             if not os.path.isdir(self.output_dir):
                 os.makedirs(self.output_dir)
             self.report_file = os.path.join(self.output_dir, self.report_file)
             self.log_file = os.path.join(self.output_dir, self.log_file)
+            self.cache_file = os.path.join(self.output_dir, '%s.json' % now.strftime('%Y%m%d%H%M%S'))
         log.file = self.log_file
 
     def _get_context(self, result):
@@ -194,8 +209,8 @@ class HTMLRunner(Runner):
         # 环境信息
         env_info = result.get_env_info()
         context = {
-            "result": result,
-            "test_cases": result.result,
+            # "result": result,
+            # "test_cases": result.result,
             "test_classes": test_classes,
         }
         [context.update(info) for info in (report_config_info,
@@ -205,16 +220,42 @@ class HTMLRunner(Runner):
 
         return context
 
+    def _cache_context(self, context):
+        """缓存上下文文件"""
+        with open(self.cache_file, 'w', encoding='utf-8') as f:
+            json.dump(context, f, cls=MyJSONEncoder, ensure_ascii=False, indent=2)
+
+    def _stat_cache(self):
+        files = os.listdir(self.output_dir)  # todo 确保output_dir存在
+        cache_files = [file_name for file_name in files if file_name.endswith('.json')]
+        cache_files.sort()
+        cache_files = cache_files[-15:]
+        data = {
+            'title': [file_name.strip('.json') for file_name in cache_files],
+            'pass': [],
+            'fail': [],
+            'error': [],
+            'skipped': [],
+        }
+        for file_name in cache_files:
+            file_path = os.path.join(self.output_dir, file_name)
+            with open(file_path, encoding='utf-8') as f:
+                run_data = json.load(f)
+            data['pass'].append(run_data.get('pass_num'))
+            data['fail'].append(run_data.get('fail_num'))
+            data['error'].append(run_data.get('error_num'))
+            data['skipped'].append(run_data.get('skipped_num'))
+        return data
+
     def generate_report(self, result):
         context = self._get_context(result)
-
+        self._cache_context(context)
+        context['cache'] = self._stat_cache()
         template_path = os.path.join(BASEDIR, 'templates', '%s.html' % self.template)
         with open(template_path, encoding='utf-8') as f:
             template_content = f.read()
+
         content = Template(template_content).render(context)
-        if self.output_dir:
-            if not os.path.isdir(self.output_dir):
-                os.makedirs(self.output_dir)  # todo try
 
         with open(self.report_file, "w", encoding='utf-8') as f:
             f.write(content)

@@ -193,7 +193,8 @@ class Result(unittest.TestResult):
         code = self._inspect_code(test)
 
         if test.id() not in self.result:
-            item = dict(obj=test,   # todo 添加为test属性
+            item = dict(
+                # obj=test,   # todo 添加为test属性
                         sn=self.sn,
                         name=test_method_name,
                         desc=test.shortDescription(),
