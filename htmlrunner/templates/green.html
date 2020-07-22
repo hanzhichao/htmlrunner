@@ -211,18 +211,18 @@ function html_escape(s) {
         {% for test_class in test_classes %}
         {% set out_loop = loop %}
         <tr class='passClass'><td>{{test_class.name}}</td><td>{{test_class.total}}</td><td>{{test_class.pass_num}}</td><td>{{test_class.fail_num}}</td><td>{{test_class.error_num}}</td><td><a href="javascript:showClassDetail('c{{ out_loop.index }}',1)">详情</a></td></tr>
-        {% for test in test_class.test_cases %}
-        <tr id='pt{{ out_loop.index }}.{{ loop.index }}' class='hiddenRow'>
-        <td class='none'><div class='testcase'>{{test.name}}: {{ test.desc }}</div></td><td colspan='5' align='center'><a class="popup_link" onfocus='this.blur();' href="javascript:showTestDetail('div_pt{{ out_loop.index }}.{{ loop.index }}')" >{{test.status}}</a>
-            <div id='div_pt{{ out_loop.index }}.{{ loop.index }}' class="popup_window">
-               <div>
-                   {% if test.output %}<div class="output">{{test.output}}</div>{% endif %}
-                   {% if test.exec_info %}<pre>{{test.exec_info}}</pre>{% endif %}
-               </div>
-            </div>
-        </td>
-        </tr>
-        {% endfor %}
+            {% for test in test_class.test_cases %}
+            <tr id='pt{{ out_loop.index }}.{{ loop.index }}' class='hiddenRow'>
+            <td class='none'><div class='testcase'>{{test.name}}: {{ test.desc }}</div></td><td colspan='5' align='center'><a class="popup_link" onfocus='this.blur();' href="javascript:showTestDetail('div_pt{{ out_loop.index }}.{{ loop.index }}')" >{{test.status}}</a>
+                <div id='div_pt{{ out_loop.index }}.{{ loop.index }}' class="popup_window">
+                   <div>
+                       {% if test.output %}<div class="output">{{test.output}}</div>{% endif %}
+                       {% if test.exec_info %}<pre>{{test.exec_info}}</pre>{% endif %}
+                   </div>
+                </div>
+            </td>
+            </tr>
+            {% endfor %}
         {% endfor %}
         <tr id='total_row'><td>总数</td><td>1</td><td class="text text-success">{{pass_num}}</td><td class="text text-danger">{{fail_num}}</td><td class="text text-warning">{{error_num}}</td><td>&nbsp;</td></tr>
 
