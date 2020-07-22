@@ -49,8 +49,9 @@ class Status(Enum):
 
 
 class Result(unittest.TestResult):
-    def __init__(self, verbosity=None, output_dir=None):
+    def __init__(self, verbosity=None, output_dir=None, failfast=False):
         super().__init__(verbosity=verbosity)
+        self.failfast = failfast
         self.verbosity = verbosity
         self.output_dir = output_dir
         self.success = []
@@ -228,9 +229,15 @@ class Result(unittest.TestResult):
         data = defaultdict(dict)
         for name, group in groupby(sorted_result, key=lambda x: x['test_class']):
             test_cases = list(group)
+            start_at = min([test.get('start_at') for test in test_cases])
+            end_at = max([test.get('end_at') for test in test_cases])
+            duration = end_at - start_at
             data[name] = dict(
                 name=name,
                 test_cases=test_cases,
+                start_at=start_at,
+                end_at=end_at,
+                duration=duration,
                 total=len(test_cases),
                 pass_num=len(list(filter(lambda x: x['status'] == "PASS", test_cases))),
                 error_num=len(list(filter(lambda x: x['status'] == "ERROR", test_cases))),

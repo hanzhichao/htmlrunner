@@ -4,6 +4,7 @@ import os
 import time
 import unittest
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from collections import defaultdict
 
@@ -45,50 +46,34 @@ def run_suite_before_case(suite, case, result):  # todo
 class Runner(object):
     def __init__(self,
                  threads=None,
-                 timeout=None,
-                 interval=None,
+                 timeout=None,  # todo 配置到用例docstring中
+                 interval=None,  # todo remove
                  failfast=False,
                  ensure_sequence=True,
-                 check_all=False,
                  output_dir=None,
                  **kwargs):
         self.threads = threads
         self.interval = interval
-        self.reruns = False  # todo
         self.timeout = timeout   # 每个用例的执行时间
         self.failfast = failfast
         self.output_dir = output_dir
         self.kwargs = kwargs
         self.ensure_sequence = ensure_sequence  # 确保运行顺序
-        self.check_all = check_all  # todo
 
-    def run_with_threads(self, case, result):  # case有可能是suite
-        assert self.threads and isinstance(self.threads, int) and self.threads > 0
-        if self.timeout:
-            assert isinstance(self.timeout, (float, int)) and self.timeout > 0
+    def collect_only(self, suite):
+        loader = Loader(suite=suite)
+        t0 = time.time()
+        i = 0
+        suite = loader.fsuite
+        print("Collect {} tests is {:.3f}s".format(suite.countTestCases(), time.time() - t0))
+        print("-" * 50)
+        for case in suite:
+            if isnotsuite(case):
+                i += 1
+                print("{}.{}".format(i, str(case)))
+        print("-" * 50)
 
-        threads = []
-        for i in range(self.threads):
-            threads.append(threading.Thread(target=case, args=(result,)))
-
-        [t.start() for t in threads]
-
-        [t.join(timeout=self.timeout) for t in threads]
-
-    def run_test(self, test, result):
-        """执行单个测试"""
-        if self.threads and isinstance(self.threads, int):
-            self.run_with_threads(test, result)
-        else:
-            test(result)
-
-        interval = self.interval
-        if interval and isinstance(interval, (int, float)):
-            time.sleep(interval)
-
-    def run_suite(self, suite, result):
-        """基础运行suite方法"""
-        log.info('执行测试套件, 用例数:', suite.countTestCases())
+    def run_suite(self, suite, result, run_func=None, interval=None):
         topLevel = False
         if getattr(result, '_testRunEntered', False) is False:
             result._testRunEntered = topLevel = True
@@ -98,7 +83,10 @@ class Runner(object):
                 setup_ok = run_suite_before_case(suite, test, result)
                 if not setup_ok:
                     continue
-            self.run_test(test, result)
+
+            run_func(test, result) if run_func else test(result)  # 可能是suite 可能有异常
+            time.sleep(interval) if interval else None
+
             if suite._cleanup:
                 suite._removeTestAtIndex(index)
 
@@ -108,14 +96,37 @@ class Runner(object):
 
         return result
 
-    def run(self, suite, callback=None, interval=None):
-        suite = Loader(suite=suite).osuite  # 按类组织并排序  # todo
+    def run_suite_by_class(self, suite, result, run_func=None, interval=None):
+        loader = Loader(suite=suite)
 
-        result = Result(output_dir=self.output_dir)
-        result.failfast = self.failfast is True
+        suite_list = loader.gsuite
+        for suite in suite_list:
+            self.run_suite(suite, result, run_func=run_func, interval=interval)
 
+    def run_suite_in_thread_poll(self, suite, result, thread_num=3, interval=None):
+        poll = ThreadPoolExecutor(max_workers=thread_num)
+        tasks = []
+        def run_in_poll(case, result):
+            task = poll.submit(case, result)
+            tasks.append(task)
+
+        self.run_suite(suite, result, run_func=run_in_poll, interval=interval)
+        return tasks
+
+    def run(self, suite, callback=None):
+        result = Result(output_dir=self.output_dir, failfast=self.failfast)
         result.start_at = datetime.now()
-        self.run_suite(suite, result)
+
+        if self.ensure_sequence:
+            loader = Loader(suite=suite)
+            suite = loader.osuite
+
+        if self.threads:
+            tasks = self.run_suite_in_thread_poll(suite, result, thread_num=self.threads, interval=self.interval)
+            for task in as_completed(tasks):
+                task.result()
+        else:
+            self.run_suite(suite, result)
         result.end_at = datetime.now()
         if callback:
             callback(result)
@@ -209,7 +220,7 @@ class HTMLRunner(Runner):
             f.write(content)
 
     def run(self, suite, callback=None, interval=None, debug=False):
-        result = super().run(suite, callback=self.generate_report, interval=interval)
+        result = super().run(suite, callback=self.generate_report)
         return result
 
 
