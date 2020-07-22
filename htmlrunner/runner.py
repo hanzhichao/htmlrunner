@@ -229,7 +229,7 @@ class HTMLRunner(Runner):
         files = os.listdir(self.output_dir)  # todo 确保output_dir存在
         cache_files = [file_name for file_name in files if file_name.endswith('.json')]
         cache_files.sort()
-        cache_files = cache_files[-15:]
+        cache_files = cache_files[-10:]
         data = {
             'title': [file_name.strip('.json') for file_name in cache_files],
             'pass': [],

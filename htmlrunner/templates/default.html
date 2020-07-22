@@ -12,7 +12,7 @@
 <body>
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-md-4">
             <h1 class="pt-4">{{title}}</h1>
             {% if description %}<h6>{{description}}</h6>{% endif %}
             {% if tester %}<h6>执行人: {{tester}}</h6>{% endif %}
@@ -20,9 +20,97 @@
             <h6 class="pb-2">开始时间: {{start_at}} </h6>
             <h6>结束时间: {{end_at}} </h6>
             <h6>耗时: {{duration}}s</h6>
-            <h6>平台: {{ platform }} 操作系统 {{ system }} Python版本: {{ python_version }} <a href="#env_info" data-toggle="collapse">环境变量</a></h6>
+            <h6>平台: {{ platform }} 操作系统 {{ system }} Python版本: {{ python_version }}</h6>
         </div>
-        <div class="col-md-4">
+        <div id="chart" class="col-md-5" style="width:100%;height:350px;">
+            <script type="text/javascript">
+            var dom = document.getElementById("chart");
+            var myChart = echarts.init(dom);
+            var app = {};
+            option = null;
+
+            app.config = {
+                verticalAlign: 'middle',
+                position: 'top',
+                distance: 15,
+            };
+
+
+            var labelOption = {
+                show: false,
+                position: app.config.position,
+                distance: app.config.distance,
+                verticalAlign: app.config.verticalAlign,
+                formatter: '{c}',
+                fontSize: 12,
+                rich: {
+                    name: {
+                        textBorderColor: '#fff'
+                    }
+                }
+            };
+
+            option = {
+                color: ['#28a745', '#dc3545', '#ffc107', '#6c757d'],
+                legend: {
+                    data: ['通过', '失败', '出错', '跳过']
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                xAxis: [
+                    {
+                        type: 'category',
+                        axisTick: {show: false},
+                        data: {{cache.title}}
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value'
+                    }
+                ],
+                series: [
+                    {
+                        name: '通过',
+                        type: 'bar',
+                        stack: '总数',
+                        barGap: 0,
+                        label: labelOption,
+                        data: {{cache.pass}}
+                    },
+                    {
+                        name: '失败',
+                        type: 'bar',
+                        stack: '总数',
+                        label: labelOption,
+                        data:  {{cache.fail}}
+                    },
+                    {
+                        name: '出错',
+                        type: 'bar',
+                        stack: '总数',
+                        label: labelOption,
+                        data:  {{cache.error}}
+                    },
+                    {
+                        name: '跳过',
+                        type: 'bar',
+                        stack: '总数',
+                        label: labelOption,
+                        data:  {{cache.skipped}}
+                    },
+                ]
+            };
+            if (option && typeof option === "object") {
+                myChart.setOption(option, true);
+            }
+        </script>
+        </div>
+        <div class="col-md-3">
             <div id="chart2" style="width: 400px;height:400px;"></div>
             <script type="text/javascript">
                 var myChart = echarts.init(document.getElementById('chart2'));
@@ -44,91 +132,6 @@
                 })
             </script>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-md-12">
-            <div id="chart" style="width:100%;height:400px;"></div>
-            <script type="text/javascript">
-                var dom = document.getElementById("chart");
-                var myChart = echarts.init(dom);
-                var app = {};
-                option = null;
-
-                app.config = {
-                    verticalAlign: 'middle',
-                    position: 'top',
-                    distance: 15,
-                };
-
-
-                var labelOption = {
-                    show: true,
-                    position: app.config.position,
-                    distance: app.config.distance,
-                    verticalAlign: app.config.verticalAlign,
-                    formatter: '{c}',
-                    fontSize: 16,
-                    rich: {
-                        name: {
-                            textBorderColor: '#fff'
-                        }
-                    }
-                };
-
-                option = {
-                    color: ['#28a745', '#dc3545', '#ffc107'],
-                    tooltip: {
-                        trigger: 'axis',
-                        axisPointer: {
-                            type: 'shadow'
-                        }
-                    },
-                    xAxis: [
-                        {
-                            type: 'category',
-                            axisTick: {show: false},
-                            data: {{cache.title}}
-                        }
-                    ],
-                    yAxis: [
-                        {
-                            type: 'value'
-                        }
-                    ],
-                    series: [
-                        {
-                            name: '通过',
-                            type: 'bar',
-                            barGap: 0,
-                            label: labelOption,
-                            data: {{cache.pass}}
-                        },
-                        {
-                            name: '失败',
-                            type: 'bar',
-                            label: labelOption,
-                            data:  {{cache.fail}}
-                        },
-                        {
-                            name: '出错',
-                            type: 'bar',
-                            label: labelOption,
-                            data:  {{cache.error}}
-                        },
-                    ]
-                };
-                if (option && typeof option === "object") {
-                    myChart.setOption(option, true);
-                }
-            </script>
-        </div>
-    </div>
-    <div id="env_info" class="collapse text-sm-left">
-        {% for key, value in env.items() %}
-            {{ key }}={{ value }}<br>
-        {% endfor %}
-    </div>
-
     <table class="table table-sm table-striped table-hover table-bordered">
         <thead class="thead-light"><tr><th>序号</th><th>用例</th><th>总数</th><th>通过</th><th>失败</th><th>出错</th><th>耗时</th><th>操作</th></tr></thead>
         <tbody>
