@@ -120,7 +120,7 @@ class Runner(object):
 
 
 class HTMLRunner(Runner):
-    def __init__(self, report_file=None, log_file=None,  # 报告文件, 日志文件, 自动创建路径
+    def __init__(self, report_file=None, log_file=None,  output=None, # 报告文件, 日志文件, 自动创建路径
                  title=None, description=None, tester=None,   # 报告内容
                  template=None, lang=None,  # 模板及语言
                  verbosity=2, failfast=False,
@@ -129,7 +129,8 @@ class HTMLRunner(Runner):
                  **kwargs):  # 额外信息
         self.verbosity = verbosity
         self.failfast = failfast
-        self.interval=interval
+        self.interval = interval
+        self.output = output
         self.report_file = datetime.now().strftime(report_file or DEFAULT_REPORT_FILE)
         self.log_file = log.file = datetime.now().strftime(log_file or DEFAULT_LOG_FILE)
 
@@ -155,7 +156,7 @@ class HTMLRunner(Runner):
         }
         # 结果统计
         result_stats_info = {
-            "total": len(result.result),
+            "total": result.totol,
             "run_num": result.testsRun,
             "pass_num": len(result.success),
             "fail_num": len(result.failures),
@@ -169,12 +170,7 @@ class HTMLRunner(Runner):
             "duration": result.end_at - result.start_at,
         }
         # 环境信息
-        env_info = {
-            "platform": platform.platform(),
-            "system": platform.system(),
-            "python_version": platform.python_version(),
-            "env": dict(os.environ),
-        }
+        env_info = result.get_env_info()
         context = {
             "result": result,
             "test_cases": result.result,
@@ -186,6 +182,10 @@ class HTMLRunner(Runner):
                                            self.kwargs)]  # 额外变量
 
         content = Template(template_content).render(context)
+        if self.output:
+            if not os.path.isdir(self.output):
+                os.makedirs(self.output)  # todo try
+        self.report_file = os.path.join(self.output, self.report_file)
         with open(self.report_file, "w") as f:
             f.write(content)
 

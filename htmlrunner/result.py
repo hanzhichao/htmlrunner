@@ -8,6 +8,10 @@ from itertools import groupby
 import inspect
 import importlib
 import base64
+import platform
+from random import randint
+import urllib.request
+from enum import Enum
 
 from logz import log
 
@@ -35,6 +39,15 @@ stdout_redirector = OutputRedirector(sys.stdout)
 stderr_redirector = OutputRedirector(sys.stderr)
 
 
+class Status(Enum):
+    PASS = 'pass'
+    FAIL = 'fail'
+    ERROR = 'error'
+    SKIPPED = 'skipped'
+    XFAIL = 'xfail'
+    XPASS = 'xpass'
+
+
 class Result(unittest.TestResult):
     def __init__(self, verbosity=2):
         super().__init__(verbosity=verbosity)
@@ -48,6 +61,18 @@ class Result(unittest.TestResult):
         self.stdout_bak = None
         self.stderr_bak = None
 
+    @property
+    def totol(self):
+        return len(list(self.result.values()))
+
+    @staticmethod
+    def get_env_info():
+        return {
+            "platform": platform.platform(),
+            "system": platform.system(),
+            "python_version": platform.python_version(),
+            "env": dict(os.environ),
+        }
     def _exc_info_to_string(self, err, test):
         return super()._exc_info_to_string(err, test)
 
@@ -76,6 +101,7 @@ class Result(unittest.TestResult):
 
     def stopTest(self, test):
         self.result[test.id()]['end_at'] = test.end_at = datetime.now()
+        self.result[test.id()]['duration'] = test.end_at - test.start_at
         self.complete_output()
 
     def update_test(self, test, status, exec_info='', setup_status=None, teardown_status=None, error_code=None):  # todo
@@ -90,20 +116,43 @@ class Result(unittest.TestResult):
             }
         )
 
-    def save_images(self, imgs):  # todo try  base64 from url
+    def _save_images(self, imgs):  # todo try  base64 from url
         new_imgs = []
+        if not os.path.exists('images'):
+            os.makedirs('images')
         for img in imgs:
-            file_name = os.path.basename(img)
-            if not os.path.exists('images'):
-                os.makedirs('images')
+            if not isinstance(img, (tuple, list)) or len(img) < 2:
+                log.error('images中每个需要是个二元序列')
+                return []
+            _type, _img = img
+
+            file_name = datetime.now().strftime(f'%Y%m%d%H%M%S_{randint(1, 100)}.png')
+            if _type == 'file':
+                file_name = os.path.basename(_img)
+                image_bin = open(_img, 'rb').read()
+            elif _type == 'base64':
+                image_bin = base64.b64decode(_img)
+            elif _type == 'bin':
+                image_bin = _img
+            elif _type == 'url':
+                res = urllib.request.urlopen(_img)
+                image_bin = res.read()
+            else:
+                raise NotImplementedError('只支持file,base64,bin,url格式')
             image_file = os.path.join('images', file_name)
+            with open(image_file, 'wb') as fout:
+                fout.write(image_bin)
             new_imgs.append(image_file)
-            fin = open(img, 'rb')
-            fout = open(image_file, 'wb')
-            fout.write(fin.read())
-            fin.close()
-            fout.close()
         return new_imgs
+
+    def _inspect_code(self, test):
+        test_method = getattr(test.__class__, test._testMethodName)
+        try:
+            code = inspect.getsource(test_method)
+        except Exception as ex:
+            log.exception(ex)
+            code = ''
+        return code
 
     def register(self, test, status, exec_info='', setup_status=None, teardown_status=None, error_code=None):   # todo
         test.output = output = self.complete_output()
@@ -124,18 +173,14 @@ class Result(unittest.TestResult):
         tags = get_case_tags(test)
         level = get_case_level(test)
         images = get_case_images(test)
-        images = self.save_images(images)
+        images = self._save_images(images)
 
         start_at = test.start_at if hasattr(test, 'start_at') else None
-        end_at = test.end_at if hasattr(test, 'end_at') else None  # 注册时未结束无end_at
-        test.duration = duration = (test.end_at - test.start_at) if start_at and end_at else 0
+        end_at = None
+        test.duration = duration = None
         test.status = status
 
-        try:
-            code = inspect.getsource(test_method)
-        except Exception as ex:
-            log.exception(ex)
-            code = ''
+        code = self._inspect_code(test)
 
         if test.id() not in self.result:
             item = dict(obj=test,   # todo 添加为test属性
@@ -177,12 +222,12 @@ class Result(unittest.TestResult):
                 name=name,
                 test_cases=test_cases,
                 total=len(test_cases),
-                pass_num=len(list(filter(lambda x: x['status' ]=="PASS", test_cases))),
-                error_num=len(list(filter(lambda x: x['status' ]=="ERROR", test_cases))),
-                fail_num=len(list(filter(lambda x: x['status' ]=="FAIL", test_cases))),
-                skipped_num=len(list(filter(lambda x: x['status' ]=="SKIPPED", test_cases))),
-                xfail_num=len(list(filter(lambda x: x['status' ]=="XFAIL", test_cases))),
-                xpass_num=len(list(filter(lambda x: x['status' ]=="XPASS", test_cases)))
+                pass_num=len(list(filter(lambda x: x['status'] == "PASS", test_cases))),
+                error_num=len(list(filter(lambda x: x['status'] == "ERROR", test_cases))),
+                fail_num=len(list(filter(lambda x: x['status'] == "FAIL", test_cases))),
+                skipped_num=len(list(filter(lambda x: x['status'] == "SKIPPED", test_cases))),
+                xfail_num=len(list(filter(lambda x: x['status'] == "XFAIL", test_cases))),
+                xpass_num=len(list(filter(lambda x: x['status'] == "XPASS", test_cases)))
             )
         test_classes = list(data.values())
 
@@ -192,7 +237,7 @@ class Result(unittest.TestResult):
         self.timeouts.append(test)
 
     def handle_load_error(self, test, err):
-        err_desc = test.id().replace('(' ,'').replace(')' ,'')
+        err_desc = test.id().replace('(', '').replace(')', '')
         function_name, path = err_desc.split()
 
         path = function_name
@@ -249,7 +294,7 @@ class Result(unittest.TestResult):
         elif isinstance(test, unittest.loader._FailedTest):
             self.handle_load_error(test, err)
         else:
-            err_desc = test.id().replace('(' ,'').replace(')' ,'')
+            err_desc = test.id().replace('(', '').replace(')', '')
             function_name, path = err_desc.split()
             if function_name in ['setUpModule', 'tearDownModule']:
                 self.handel_module_setup_teardown_error(test, err)
