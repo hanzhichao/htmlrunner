@@ -148,7 +148,7 @@ class Result(unittest.TestResult):
             image_file = os.path.join(images_dir, file_name)
             with open(image_file, 'wb') as fout:
                 fout.write(image_bin)
-            new_imgs.append(image_file)
+            new_imgs.append(os.path.join('images', file_name))
         return new_imgs
 
     def _inspect_code(self, test):
@@ -164,8 +164,8 @@ class Result(unittest.TestResult):
                  setup_status=None, teardown_status=None, error_code=None):   # todo
         test.output = output = self.complete_output()
         # sys.stdout.write(output)
-        log.info(output)
-        # sys.stdout.write(output)
+        if output:
+            log.info(output)
         test_module_name = test.__module__
         test_class_name = test.__class__.__name__
         test_class_doc = test.__class__.__doc__
