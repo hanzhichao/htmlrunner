@@ -50,12 +50,14 @@ class Runner(object):
                  failfast=False,
                  ensure_sequence=True,
                  check_all=False,
+                 output_dir=None,
                  **kwargs):
         self.threads = threads
         self.interval = interval
         self.reruns = False  # todo
         self.timeout = timeout   # 每个用例的执行时间
         self.failfast = failfast
+        self.output_dir = output_dir
         self.kwargs = kwargs
         self.ensure_sequence = ensure_sequence  # 确保运行顺序
         self.check_all = check_all  # todo
@@ -76,18 +78,16 @@ class Runner(object):
     def run_test(self, test, result):
         """执行单个测试"""
         if self.threads and isinstance(self.threads, int):
-            print(self.threads, self.timeout)
             self.run_with_threads(test, result)
         else:
             test(result)
         interval = self.interval
-        print('interval', interval)
         if interval and isinstance(interval, (int, float)):
             time.sleep(interval)
 
     def run_suite(self, suite, result):
         """基础运行suite方法"""
-        log.info('执行测试套件:', suite)
+        log.info('执行测试套件, 用例数:', suite.countTestCases())
         topLevel = False
         if getattr(result, '_testRunEntered', False) is False:
             result._testRunEntered = topLevel = True
@@ -108,7 +108,7 @@ class Runner(object):
         return result
 
     def run(self, suite, callback=None, interval=None):
-        result = Result()
+        result = Result(output_dir=self.output_dir)
         result.failfast = self.failfast is True
 
         result.start_at = datetime.now()
@@ -120,7 +120,7 @@ class Runner(object):
 
 
 class HTMLRunner(Runner):
-    def __init__(self, report_file=None, log_file=None,  output=None, # 报告文件, 日志文件, 自动创建路径
+    def __init__(self, report_file=None, log_file=None,  output_dir=None, # 报告文件, 日志文件, 自动创建路径
                  title=None, description=None, tester=None,   # 报告内容
                  template=None, lang=None,  # 模板及语言
                  verbosity=2, failfast=False,
@@ -130,23 +130,33 @@ class HTMLRunner(Runner):
         self.verbosity = verbosity
         self.failfast = failfast
         self.interval = interval
-        self.output = output
-        self.report_file = datetime.now().strftime(report_file or DEFAULT_REPORT_FILE)
-        self.log_file = log.file = datetime.now().strftime(log_file or DEFAULT_LOG_FILE)
+        self.output_dir = output_dir
+        self._report_file = report_file
+        self._log_file = log_file
 
         self.title = title or DEFAULT_REPORT_TITLE
         self.description = description
         self.tester = tester
         self.template = template or DEFAULT_TEMPLATE
         self.kwargs = kwargs
-        super().__init__(threads, timeout, interval)
+        super().__init__(threads, timeout, interval, output_dir=output_dir)
+        self._handle_output_dir()
 
-    def generate_report(self, result):
-        template_path = os.path.join(BASEDIR, 'templates', '%s.html' % self.template)
 
-        with open(template_path) as f:
-            template_content = f.read()
+    def _handle_output_dir(self):
+        self.report_file = datetime.now().strftime(self._report_file or DEFAULT_REPORT_FILE)
+        self.log_file = datetime.now().strftime(self._log_file or DEFAULT_LOG_FILE)
 
+        if self.output_dir:
+            if not os.path.isdir(self.output_dir):
+                os.makedirs(self.output_dir)
+            self.report_file = os.path.join(self.output_dir, self.report_file)
+            self.log_file = os.path.join(self.output_dir, self.log_file)
+        log.file = self.log_file
+
+
+
+    def _get_context(self, result):
         test_classes = result.sortByClass()
         # 报告配置信息
         report_config_info = {
@@ -181,12 +191,20 @@ class HTMLRunner(Runner):
                                            env_info,
                                            self.kwargs)]  # 额外变量
 
+        return context
+
+    def generate_report(self, result):
+        context = self._get_context(result)
+
+        template_path = os.path.join(BASEDIR, 'templates', '%s.html' % self.template)
+        with open(template_path, encoding='utf-8') as f:
+            template_content = f.read()
         content = Template(template_content).render(context)
-        if self.output:
-            if not os.path.isdir(self.output):
-                os.makedirs(self.output)  # todo try
-        self.report_file = os.path.join(self.output, self.report_file)
-        with open(self.report_file, "w") as f:
+        if self.output_dir:
+            if not os.path.isdir(self.output_dir):
+                os.makedirs(self.output_dir)  # todo try
+
+        with open(self.report_file, "w", encoding='utf-8') as f:
             f.write(content)
 
     def run(self, suite, callback=None, interval=None, debug=False):

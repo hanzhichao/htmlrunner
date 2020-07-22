@@ -49,10 +49,10 @@ class Status(Enum):
 
 
 class Result(unittest.TestResult):
-    def __init__(self, verbosity=2):
+    def __init__(self, verbosity=None, output_dir=None):
         super().__init__(verbosity=verbosity)
         self.verbosity = verbosity
-        self.timeouts = []
+        self.output_dir = output_dir
         self.success = []
         self.timeouts = []
         self.result = {}
@@ -73,6 +73,7 @@ class Result(unittest.TestResult):
             "python_version": platform.python_version(),
             "env": dict(os.environ),
         }
+
     def _exc_info_to_string(self, err, test):
         return super()._exc_info_to_string(err, test)
 
@@ -92,7 +93,7 @@ class Result(unittest.TestResult):
             sys.stderr = self.stderr_bak
             self.stdout_bak = None
             self.stderr_bak = None
-        return self.output.getvalue()
+        return self.output.getvalue().strip()
 
     def startTest(self, test):
         self.capture_output()
@@ -104,9 +105,10 @@ class Result(unittest.TestResult):
         self.result[test.id()]['duration'] = test.end_at - test.start_at
         self.complete_output()
 
-    def update_test(self, test, status, exec_info='', setup_status=None, teardown_status=None, error_code=None):  # todo
+    def update_test(self, test, status, exec_info='',
+                    setup_status=None, teardown_status=None, error_code=None):  # todo
         output = self.complete_output()
-        sys.stdout.write(output)
+        # sys.stdout.write(output)
         last_output = self.result[test.id()].get(output, '')
         last_exec_info = self.result[test.id()].get(output, '')
         self.result[test.id()].update(
@@ -118,8 +120,7 @@ class Result(unittest.TestResult):
 
     def _save_images(self, imgs):  # todo try  base64 from url
         new_imgs = []
-        if not os.path.exists('images'):
-            os.makedirs('images')
+
         for img in imgs:
             if not isinstance(img, (tuple, list)) or len(img) < 2:
                 log.error('images中每个需要是个二元序列')
@@ -139,7 +140,12 @@ class Result(unittest.TestResult):
                 image_bin = res.read()
             else:
                 raise NotImplementedError('只支持file,base64,bin,url格式')
-            image_file = os.path.join('images', file_name)
+
+            images_dir = 'images' if self.output_dir is None else os.path.join(self.output_dir, 'images')
+            if not os.path.exists(images_dir):
+                os.makedirs(images_dir)
+
+            image_file = os.path.join(images_dir, file_name)
             with open(image_file, 'wb') as fout:
                 fout.write(image_bin)
             new_imgs.append(image_file)
@@ -154,9 +160,12 @@ class Result(unittest.TestResult):
             code = ''
         return code
 
-    def register(self, test, status, exec_info='', setup_status=None, teardown_status=None, error_code=None):   # todo
+    def register(self, test, status, exec_info='',
+                 setup_status=None, teardown_status=None, error_code=None):   # todo
         test.output = output = self.complete_output()
-        sys.stdout.write(output)
+        # sys.stdout.write(output)
+        log.info(output)
+        # sys.stdout.write(output)
         test_module_name = test.__module__
         test_class_name = test.__class__.__name__
         test_class_doc = test.__class__.__doc__
@@ -186,6 +195,7 @@ class Result(unittest.TestResult):
             item = dict(obj=test,   # todo 添加为test属性
                         sn=self.sn,
                         name=test_method_name,
+                        desc=test.shortDescription(),
                         full_name=str(test),
                         full_path=test.id(),
                         doc=test_method_doc,
@@ -232,9 +242,6 @@ class Result(unittest.TestResult):
         test_classes = list(data.values())
 
         return test_classes
-
-    def addTimeout(self, err, test):  # todo remove
-        self.timeouts.append(test)
 
     def handle_load_error(self, test, err):
         err_desc = test.id().replace('(', '').replace(')', '')
