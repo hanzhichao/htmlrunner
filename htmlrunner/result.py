@@ -235,17 +235,17 @@ class Result(unittest.TestResult):
             duration = end_at - start_at
             data[name] = dict(
                 name=name,
-                test_cases=test_cases,
-                start_at=start_at,
-                end_at=end_at,
-                duration=duration,
-                total=len(test_cases),
-                pass_num=len(list(filter(lambda x: x['status'] == "PASS", test_cases))),
-                error_num=len(list(filter(lambda x: x['status'] == "ERROR", test_cases))),
-                fail_num=len(list(filter(lambda x: x['status'] == "FAIL", test_cases))),
-                skipped_num=len(list(filter(lambda x: x['status'] == "SKIPPED", test_cases))),
-                xfail_num=len(list(filter(lambda x: x['status'] == "XFAIL", test_cases))),
-                xpass_num=len(list(filter(lambda x: x['status'] == "XPASS", test_cases)))
+                tests=test_cases,
+                time=dict(start_at=start_at,end_at=end_at,duration=duration),
+                stat=dict(
+                    total=len(test_cases),
+                    pass_num=len(list(filter(lambda x: x['status'] == "PASS", test_cases))),
+                    error_num=len(list(filter(lambda x: x['status'] == "ERROR", test_cases))),
+                    fail_num=len(list(filter(lambda x: x['status'] == "FAIL", test_cases))),
+                    skipped_num=len(list(filter(lambda x: x['status'] == "SKIPPED", test_cases))),
+                    xfail_num=len(list(filter(lambda x: x['status'] == "XFAIL", test_cases))),
+                    xpass_num=len(list(filter(lambda x: x['status'] == "XPASS", test_cases)))
+                )
             )
         test_classes = list(data.values())
 

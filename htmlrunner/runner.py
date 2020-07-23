@@ -185,38 +185,43 @@ class HTMLRunner(Runner):
     def _get_context(self, result):
         """组装上下文信息"""
         test_classes = result.sortByClass()
-        # 报告配置信息
-        report_config_info = {
-            "title": self.title,
-            "description": self.description,
-            "tester": self.tester
-        }
+
         # 结果统计
-        result_stats_info = {
-            "total": result.totol,
-            "run_num": result.testsRun,
-            "pass_num": len(result.success),
-            "fail_num": len(result.failures),
-            "skipped_num": len(result.skipped),
-            "error_num": len(result.errors),
-            "xfail_num": len(result.expectedFailures),
-            "xpass_num": len(result.unexpectedSuccesses),
-            "rerun_num": 0,
-            "start_at": result.start_at,
-            "end_at": result.end_at,
-            "duration": result.end_at - result.start_at,
+        result_summary = {
+            "report": {
+                "title": self.title,
+                "description": self.description,
+                "tester": self.tester
+            },
+            "stat": {
+                "total": result.totol,
+                "run_num": result.testsRun,
+                "pass_num": len(result.success),
+                "fail_num": len(result.failures),
+                "skipped_num": len(result.skipped),
+                "error_num": len(result.errors),
+                "xfail_num": len(result.expectedFailures),
+                "xpass_num": len(result.unexpectedSuccesses),
+                "rerun_num": 0,
+            },
+            "time": {
+                "start_at": result.start_at,
+                "end_at": result.end_at,
+                "duration": result.end_at - result.start_at,
+            },
+            "platform":
+                {
+                "platform": platform.platform(),
+                "system": platform.system(),
+                "python_version": platform.python_version(),
+                "env": dict(os.environ),
+            },
+            "suites": test_classes,
+
         }
+        context = {}
         # 环境信息
-        env_info = result.get_env_info()
-        context = {
-            # "result": result,
-            # "test_cases": result.result,
-            "test_classes": test_classes,
-        }
-        [context.update(info) for info in (report_config_info,
-                                           result_stats_info,
-                                           env_info,
-                                           self.kwargs)]  # 额外变量
+        [context.update(info) for info in (result_summary, self.kwargs)]  # 额外变量
 
         return context
 
