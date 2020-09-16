@@ -43,4 +43,5 @@ if __name__ == '__main__':
     result = runner.run(suite)
     from pprint import pprint
 
-    pprint(result.summary)
+    pprint(result.data_by_class)
+    # pprint(result.summary)
