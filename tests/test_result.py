@@ -1,3 +1,5 @@
+"""hello"""
+
 import sys
 sys.path.insert(0, '/Users/superhin/项目/htmlrunner')
 from htmlrunner.result import TestResult
@@ -8,6 +10,7 @@ import time
 
 
 class MyTestCase(unittest.TestCase):
+    """测试MytestCase"""
     def test_something(self):
         """测试1
         level:3
