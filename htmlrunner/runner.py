@@ -253,6 +253,7 @@ class HTMLRunner(Runner):
         return data
 
     def generate_report(self, result):
+        print('生成报告')
         context = self._get_context(result)
         self._cache_context(context)
         context['cache'] = self._stat_cache()
@@ -261,7 +262,7 @@ class HTMLRunner(Runner):
             template_content = f.read()
 
         content = Template(template_content).render(context)
-
+        print(self.report_file)
         with open(self.report_file, "w", encoding='utf-8') as f:
             f.write(content)
 
