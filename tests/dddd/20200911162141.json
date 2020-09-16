@@ -1,0 +1,185 @@
+{
+  "report": {
+    "title": "测试报告",
+    "description": "测试报告描述",
+    "tester": "Hzc"
+  },
+  "stat": {
+    "total": 4,
+    "run_num": 4,
+    "pass_num": 2,
+    "fail_num": 1,
+    "skipped_num": 1,
+    "error_num": 0,
+    "xfail_num": 0,
+    "xpass_num": 0,
+    "rerun_num": 0
+  },
+  "time": {
+    "start_at": "2020-09-11 16:21:41",
+    "end_at": "2020-09-11 16:21:42",
+    "duration": 1
+  },
+  "platform": {
+    "platform": "Darwin-19.6.0-x86_64-i386-64bit",
+    "system": "Darwin",
+    "python_version": "3.7.7",
+    "env": {
+      "PATH": "/Users/superhin/项目/htmlrunner/venv/bin:/usr/local/opt/openjdk/bin:/usr/local/Cellar/mongodb-community/4.2.7/bin:/usr/local/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin}",
+      "SMTP_USER": "rpa@secoo.com",
+      "PS1": "(venv) ",
+      "RUNNING_NODE": "185",
+      "AUTOJUMP_SOURCED": "1",
+      "VERSIONER_PYTHON_VERSION": "2.7",
+      "SMTP_PWD": "Youxiang_00137",
+      "LOGNAME": "superhin",
+      "XPC_SERVICE_NAME": "com.jetbrains.pycharm.560648",
+      "PWD": "/Users/superhin/项目/htmlrunner/tests",
+      "PYCHARM_HOSTED": "1",
+      "PYTHONPATH": "/Users/superhin/项目/htmlrunner",
+      "SHELL": "/bin/zsh",
+      "PYTHONIOENCODING": "UTF-8",
+      "HOMEBREW_BOTTLE_DOMAIN": "https://mirrors.ustc.edu.cn/homebrew-bottles",
+      "OLDPWD": "/",
+      "USER": "superhin",
+      "PYCURL_SSL_LIBRARY": "nss",
+      "TMPDIR": "/var/folders/jh/jblt4q5j3bq4dkjj92wrjtvh0000gp/T/",
+      "SSH_AUTH_SOCK": "/private/tmp/com.apple.launchd.rAJrjwER4H/Listeners",
+      "VIRTUAL_ENV": "/Users/superhin/项目/htmlrunner/venv",
+      "XPC_FLAGS": "0x0",
+      "PYTHONUNBUFFERED": "1",
+      "__CF_USER_TEXT_ENCODING": "0x1F6:0x19:0x34",
+      "LC_CTYPE": "zh_CN.UTF-8",
+      "HOME": "/Users/superhin",
+      "AUTOJUMP_ERROR_PATH": "/Users/superhin/Library/autojump/errors.log",
+      "__PYVENV_LAUNCHER__": "/Users/superhin/项目/htmlrunner/venv/bin/python"
+    }
+  },
+  "suites": [
+    {
+      "name": "TestA",
+      "tests": [
+        {
+          "sn": 1,
+          "name": "test_c",
+          "desc": "测试c",
+          "full_name": "test_c (__main__.test_with_images.<locals>.TestA)",
+          "full_path": "__main__.test_with_images.<locals>.TestA.test_c",
+          "doc": "测试c\n            tag:smoke\n            tag:web\n            tag:hello\n            level:1\n            order:1",
+          "code": "        @unittest.skip('')\n        def test_c(self):\n            \"\"\"测试c\n            tag:smoke\n            tag:web\n            tag:hello\n            level:1\n            order:1\"\"\"\n            print('测试c')\n            from time import sleep\n            # sleep(2)\n            logging.warning('测试c')\n",
+          "status": "SKIPPED",
+          "setup_status": null,
+          "teardown_status": null,
+          "test_class": "TestA",
+          "test_class_doc": null,
+          "test_module": "",
+          "start_at": "2020-09-11 16:21:41",
+          "end_at": "2020-09-11 16:21:41",
+          "duration": 0,
+          "exec_info": "",
+          "output": "",
+          "tags": [
+            "smoke",
+            "web",
+            "hello"
+          ],
+          "level": 1,
+          "images": []
+        },
+        {
+          "sn": 2,
+          "name": "test_d",
+          "desc": "测试c",
+          "full_name": "test_d (__main__.test_with_images.<locals>.TestA)",
+          "full_path": "__main__.test_with_images.<locals>.TestA.test_d",
+          "doc": "测试c\n            tag:smoke\n            tag:web\n            tag:hello\n            level:1\n            order:1",
+          "code": "        def test_d(self):\n            \"\"\"测试c\n            tag:smoke\n            tag:web\n            tag:hello\n            level:1\n            order:1\"\"\"\n            print('测试d')\n            from time import sleep\n            # sleep(2)\n            logging.warning('测试d')\n",
+          "status": "PASS",
+          "setup_status": null,
+          "teardown_status": null,
+          "test_class": "TestA",
+          "test_class_doc": null,
+          "test_module": "",
+          "start_at": "2020-09-11 16:21:41",
+          "end_at": "2020-09-11 16:21:41",
+          "duration": 0,
+          "exec_info": "",
+          "output": "测试d\nWARNING:root:测试d\n",
+          "tags": [
+            "smoke",
+            "web",
+            "hello"
+          ],
+          "level": 1,
+          "images": []
+        },
+        {
+          "sn": 3,
+          "name": "test_a",
+          "desc": "测试a",
+          "full_name": "test_a (__main__.test_with_images.<locals>.TestA)",
+          "full_path": "__main__.test_with_images.<locals>.TestA.test_a",
+          "doc": "测试a\n            tag:中文\n            order:2",
+          "code": "        def test_a(self):\n            \"\"\"测试a\n            tag:中文\n            order:2\"\"\"\n            print('测试a')\n",
+          "status": "PASS",
+          "setup_status": null,
+          "teardown_status": null,
+          "test_class": "TestA",
+          "test_class_doc": null,
+          "test_module": "",
+          "start_at": "2020-09-11 16:21:41",
+          "end_at": "2020-09-11 16:21:41",
+          "duration": 0,
+          "exec_info": "",
+          "output": "测试a\n",
+          "tags": [
+            "中文"
+          ],
+          "level": null,
+          "images": []
+        },
+        {
+          "sn": 4,
+          "name": "test_b",
+          "desc": "测试b",
+          "full_name": "test_b (__main__.test_with_images.<locals>.TestA)",
+          "full_path": "__main__.test_with_images.<locals>.TestA.test_b",
+          "doc": "测试b\n            tag:hello\n            level:2",
+          "code": "        def test_b(self):\n            \"\"\"测试b\n            tag:hello\n            level:2\"\"\"\n            self.images = [('file', '/Users/superhin/Downloads/beida.jpeg')]\n            print('测试b')\n            assert 0\n",
+          "status": "FAIL",
+          "setup_status": null,
+          "teardown_status": null,
+          "test_class": "TestA",
+          "test_class_doc": null,
+          "test_module": "",
+          "start_at": "2020-09-11 16:21:41",
+          "end_at": "2020-09-11 16:21:41",
+          "duration": 0,
+          "exec_info": "Traceback (most recent call last):\n  File \"/Users/superhin/项目/htmlrunner/tests/test_htmlrunner.py\", line 105, in test_b\n    assert 0\nAssertionError\n",
+          "output": "测试b\n",
+          "tags": [
+            "hello"
+          ],
+          "level": 2,
+          "images": [
+            "images/beida.jpeg"
+          ]
+        }
+      ],
+      "time": {
+        "start_at": "2020-09-11 16:21:41",
+        "end_at": "2020-09-11 16:21:41",
+        "duration": 0
+      },
+      "stat": {
+        "total": 4,
+        "pass_num": 2,
+        "error_num": 0,
+        "fail_num": 1,
+        "skipped_num": 1,
+        "xfail_num": 0,
+        "xpass_num": 0
+      }
+    }
+  ]
+}

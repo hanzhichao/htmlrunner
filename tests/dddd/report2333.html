@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4">
+            <h1 class="pt-4"></h1>
+            
+            
+            <h6>概要: 总数:  执行数:  通过:  失败:  出错:  跳过: </h6>
+            <h6 class="pb-2">开始时间:  </h6>
+            <h6>结束时间:  </h6>
+            <h6>耗时: s</h6>
+            <h6>平台: {'platform': 'Darwin-19.6.0-x86_64-i386-64bit', 'system': 'Darwin', 'python_version': '3.7.7', 'env': {'PATH': '/Users/superhin/项目/htmlrunner/venv/bin:/usr/local/opt/openjdk/bin:/usr/local/Cellar/mongodb-community/4.2.7/bin:/usr/local/sbin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin}', 'SMTP_USER': 'rpa@secoo.com', 'PS1': '(venv) ', 'RUNNING_NODE': '185', 'AUTOJUMP_SOURCED': '1', 'VERSIONER_PYTHON_VERSION': '2.7', 'SMTP_PWD': 'Youxiang_00137', 'LOGNAME': 'superhin', 'XPC_SERVICE_NAME': 'com.jetbrains.pycharm.560648', 'PWD': '/Users/superhin/项目/htmlrunner/tests', 'PYCHARM_HOSTED': '1', 'PYTHONPATH': '/Users/superhin/项目/htmlrunner', 'SHELL': '/bin/zsh', 'PYTHONIOENCODING': 'UTF-8', 'HOMEBREW_BOTTLE_DOMAIN': 'https://mirrors.ustc.edu.cn/homebrew-bottles', 'OLDPWD': '/', 'USER': 'superhin', 'PYCURL_SSL_LIBRARY': 'nss', 'TMPDIR': '/var/folders/jh/jblt4q5j3bq4dkjj92wrjtvh0000gp/T/', 'SSH_AUTH_SOCK': '/private/tmp/com.apple.launchd.rAJrjwER4H/Listeners', 'VIRTUAL_ENV': '/Users/superhin/项目/htmlrunner/venv', 'XPC_FLAGS': '0x0', 'PYTHONUNBUFFERED': '1', '__CF_USER_TEXT_ENCODING': '0x1F6:0x19:0x34', 'LC_CTYPE': 'zh_CN.UTF-8', 'HOME': '/Users/superhin', 'AUTOJUMP_ERROR_PATH': '/Users/superhin/Library/autojump/errors.log', '__PYVENV_LAUNCHER__': '/Users/superhin/项目/htmlrunner/venv/bin/python'}} 操作系统  Python版本: </h6>
+        </div>
+        <div id="chart" class="col-md-5" style="width:100%;height:350px;">
+            <script type="text/javascript">
+            var dom = document.getElementById("chart");
+            var myChart = echarts.init(dom);
+            var app = {};
+            option = null;
+
+            app.config = {
+                verticalAlign: 'middle',
+                position: 'top',
+                distance: 15,
+            };
+
+
+            var labelOption = {
+                show: false,
+                position: app.config.position,
+                distance: app.config.distance,
+                verticalAlign: app.config.verticalAlign,
+                formatter: '{c}',
+                fontSize: 12,
+                rich: {
+                    name: {
+                        textBorderColor: '#fff'
+                    }
+                }
+            };
+
+            option = {
+                color: ['#28a745', '#dc3545', '#ffc107', '#6c757d'],
+                legend: {
+                    data: ['通过', '失败', '出错', '跳过']
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                xAxis: [
+                    {
+                        type: 'category',
+                        axisTick: {show: false},
+                        data: ['20200911162141']
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value'
+                    }
+                ],
+                series: [
+                    {
+                        name: '通过',
+                        type: 'bar',
+                        stack: '总数',
+                        barGap: 0,
+                        label: labelOption,
+                        data: [None]
+                    },
+                    {
+                        name: '失败',
+                        type: 'bar',
+                        stack: '总数',
+                        label: labelOption,
+                        data:  [None]
+                    },
+                    {
+                        name: '出错',
+                        type: 'bar',
+                        stack: '总数',
+                        label: labelOption,
+                        data:  [None]
+                    },
+                    {
+                        name: '跳过',
+                        type: 'bar',
+                        stack: '总数',
+                        label: labelOption,
+                        data:  [None]
+                    },
+                ]
+            };
+            if (option && typeof option === "object") {
+                myChart.setOption(option, true);
+            }
+        </script>
+        </div>
+        <div class="col-md-3">
+            <div id="chart2" style="width: 400px;height:400px;"></div>
+            <script type="text/javascript">
+                var myChart = echarts.init(document.getElementById('chart2'));
+                myChart.setOption({
+                    series : [
+                        {
+                            name: '执行统计',
+                            type: 'pie',    // 设置图表类型为饼图
+                            radius: '55%',  // 饼图的半径，外半径为可视区尺寸（容器高宽中较小一项）的 55% 长度。
+                            color: ['#28a745', '#dc3545', '#ffc107', '#6c757d'],
+                            data:[          // 数据数组，name 为数据项名称，value 为数据项值
+                                {value:, name:'通过'},
+                                {value: , name:'失败'},
+                                {value: , name:'出错'},
+                                {value:, name:'跳过'},
+                            ]
+                        }
+                    ]
+                })
+            </script>
+        </div>
+    <table class="table table-sm table-striped table-hover table-bordered">
+        <thead class="thead-light"><tr><th>序号</th><th>用例</th><th>总数</th><th>通过</th><th>失败</th><th>出错</th><th>耗时</th><th>操作</th></tr></thead>
+        <tbody>
+        
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

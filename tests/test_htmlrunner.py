@@ -108,4 +108,4 @@ def test_with_images():
 
 
 if __name__ == "__main__":
-    test_with_images()
+    test_with_timeout()
