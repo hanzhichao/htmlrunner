@@ -15,17 +15,20 @@ class MyTestCase(unittest.TestCase):
         """测试1
         level:3
         """
+        a = 1
+        b = 2
         self.level=1
         print('test_something')
         print(1/0)
 
         # time.sleep(1)
-        self.assertEqual(True, False)
+
 
     def test_something2(self):
         # time.sleep(1)
         self.tags=['abc']
         print('test_something2')
+        self.assertEqual(True, False, msg='True 不等于 False')
 
     def test_something3(self):
         """测试3
@@ -35,6 +38,7 @@ class MyTestCase(unittest.TestCase):
         """
         # time.sleep(1)
         print('test_something3')
+        assert 1==0, '1不等于0呀'
 
 
 if __name__ == '__main__':
@@ -43,5 +47,5 @@ if __name__ == '__main__':
     result = runner.run(suite)
     from pprint import pprint
 
-    pprint(result.data_by_class)
-    # pprint(result.summary)
+    # pprint(result.data_by_class)
+    pprint(result.data)
